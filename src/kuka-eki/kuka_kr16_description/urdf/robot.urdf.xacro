@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!--Generates a urdf from the macro in kr16_2_macro.xacro -->
+<robot name="kuka_kr16" xmlns:xacro="http://wiki.ros.org/xacro">
+    <xacro:include filename="$(find kuka_kr16_description)/urdf/kr16_2_macro.xacro"/>
+    <xacro:arg name="initial_positions_file" default="$(find kuka_common)/config/initial_positions.yaml"/>
+    <xacro:arg name="robot_ip" default="10.181.116.41"/>
+    <xacro:arg name="eki_robot_port" default="54600"/>
+    <xacro:arg name="use_fake_hardware" default="true"/>
+
+    <xacro:kuka_kr16_2 prefix="" initial_positions_file="$(arg initial_positions_file)"
+                       robot_ip="$(arg robot_ip)" eki_robot_port="$(arg eki_robot_port)"
+                       use_fake_hardware="$(arg use_fake_hardware)"/>
+</robot>
