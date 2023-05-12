@@ -53,6 +53,8 @@ RUN apt-get update && \
     wget \
     curl \
     gedit \
+    usbutils \
+    udev \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip && \
@@ -60,7 +62,12 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir pandas && \
     pip install --no-cache-dir matplotlib && \
     pip install --no-cache-dir opencv-python && \
-    pip install --no-cache-dir scipy
+    pip install --no-cache-dir scipy && \
+    pip install --no-cache-dir pyrealsense2 && \
+    pip install --no-cache-dir tk && \
+    pip install --no-cache-dir Pillow
+
+
 
 USER root
 RUN DEBIAN_FRONTEND=noninteractive \

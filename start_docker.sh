@@ -9,16 +9,19 @@ docker build --build-arg UID="$uid" \
              --build-arg ROS_DISTRO="$ROS_DISTRO" \
              --build-arg DOMAIN_ID="$DOMAIN_ID" \
              -f Dockerfile \
-             -t pick-up-rittersport/ros:$ROS_DISTRO .
+             -t brause/ros:$ROS_DISTRO .
 
-docker run --name pick-up-rittersport \
+docker run --name brause \
            --user $uid:$gid \
            --privileged \
            --env DISPLAY=$DISPLAY \
            --net host \
            --ipc host \
+           --device-cgroup-rule "c 81:* rmw" \
+           --device-cgroup-rule "c 189:* rmw" \
+           -v /dev:/dev \
            -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
            -v $PWD/src:/home/robot/ros2_ws/src:rw \
            --rm \
            -it \
-           pick-up-rittersport/ros:$ROS_DISTRO
+           brause/ros:$ROS_DISTRO
