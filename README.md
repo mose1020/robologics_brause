@@ -171,6 +171,9 @@ Realsense Node launch via:
         - If everything is fine, execute
           ```
           ros2 launch kuka_kr3_cell_description cell.launch.py use_fake_hardware:=false robot_ip:=<robot-ip>
+
+          ros2 launch kuka_kr3_cell_description cell.launch.py use_fake_hardware:=false robot_ip:=10.181.116.71
+
           ```
 3. Check out tutorial code
     - Open up VSCode (Windows key &rarr; type "code" &rarr; Enter)
@@ -201,4 +204,8 @@ Realsense Node launch via:
 
 Note, that this repository is a template repository. You can use it as a starting point for your own ROS2 applications
 but please do not push your changes to this repository.
+
+
+BAse  coordinates R3 on metal grid
+0.125 0.324 1.023
    

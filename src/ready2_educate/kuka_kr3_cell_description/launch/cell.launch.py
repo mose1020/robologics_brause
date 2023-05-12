@@ -27,7 +27,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "robot_ip",
-            default_value="10.181.116.41",
+            default_value="10.181.116.71",
             description="IP address by which the robot can be reached.",
         )
     )

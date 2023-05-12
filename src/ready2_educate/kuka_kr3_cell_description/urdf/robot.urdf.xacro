@@ -5,7 +5,7 @@
     <xacro:include filename="$(find kuka_common)/urdf/kuka.ros2_control.xacro"/>
     <xacro:arg name="initial_positions_file" default="$(find kuka_kr3_cell_description)/config/initial_positions.yaml"/>
     <xacro:include filename="$(find kuka_kr3_cell_description)/urdf/cell.urdf.xacro"/>
-    <xacro:arg name="robot_ip" default="10.181.116.41"/>
+    <xacro:arg name="robot_ip" default="10.181.116.71"/>
     <xacro:arg name="eki_robot_port" default="54600"/>
     <xacro:arg name="use_fake_hardware" default="true"/>
 
