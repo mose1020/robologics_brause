@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<robot name="kuka_kr5" xmlns:xacro="http://wiki.ros.org/xacro">
+    <xacro:include filename="$(find kuka_kr5_description)/urdf/kr5_arc_macro.xacro"/>
+    <xacro:arg name="initial_positions_file" default="$(find kuka_common)/config/initial_positions.yaml"/>
+    <xacro:arg name="robot_ip" default="10.181.116.41"/>
+    <xacro:arg name="eki_robot_port" default="54600"/>
+    <xacro:arg name="use_fake_hardware" default="true"/>
+    <xacro:kuka_kr5_arc prefix="" initial_positions_file="$(arg initial_positions_file)"
+                        robot_ip="$(arg robot_ip)" eki_robot_port="$(arg eki_robot_port)"
+                        use_fake_hardware="$(arg use_fake_hardware)"/>
+</robot>
