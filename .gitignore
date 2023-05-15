@@ -11,6 +11,6 @@
 !.vscode/settings.json
 
 # colcon/CMake output
-build
-install
-log
+src/build
+src/install
+src/log
