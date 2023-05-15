@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro"
+       name="kuka_kr3">
+    <xacro:include filename="$(find kuka_kr3_description)/urdf/kr3r540_macro.xacro"/>
+    <xacro:include filename="$(find kuka_common)/urdf/kuka.ros2_control.xacro"/>
+    <xacro:arg name="initial_positions_file" default="$(find kuka_kr3_cell_description)/config/initial_positions.yaml"/>
+    <xacro:include filename="$(find kuka_kr3_cell_description)/urdf/cell.urdf.xacro"/>
+    <xacro:arg name="robot_ip" default="10.181.116.71"/>
+    <xacro:arg name="eki_robot_port" default="54600"/>
+    <xacro:arg name="use_fake_hardware" default="true"/>
+
+    
+
+    <xacro:include filename="$(find zimmer_gp406n)/urdf/gripper.urdf.xacro"/>
+    <xacro:include filename="$(find vacuum_gripper)/urdf/gripper.urdf.xacro"/>
+    <xacro:kuka_kr3r540 prefix="" initial_positions_file="$(arg initial_positions_file)"
+        robot_ip="$(arg robot_ip)" eki_robot_port="$(arg eki_robot_port)" use_fake_hardware="$(arg use_fake_hardware)"/>
+    <xacro:kr3_cell prefix=""/>
+    <!-- Adding the Zimmer Gripper-->
+    <xacro:zimmer_gp406n prefix="" parent="flange">
+        <origin xyz="-0.355 0 -0.621" rpy="0 0 0"/>
+    </xacro:zimmer_gp406n>
+    <!-- Adding the Vacuum Gripper-->
+    <xacro:vacuum_gripper prefix="" parent="gripper_link">
+        <origin xyz="0.46 0 0.58" rpy="0.5 0 1.57"/>
+    </xacro:vacuum_gripper>
+
+    <link name="world"/>
+    <joint name="world_to_cell" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <parent link="world"/>
+        <child link="cell_link"/>
+    </joint>
+
+    <joint name="cell_to_base" type="fixed">
+        <origin xyz="-0.25 -0.0525 0.835" rpy="0 0 0"/>
+        <parent link="cell_link"/>
+        <child link="base_link"/>
+    </joint>
+
+</robot>
