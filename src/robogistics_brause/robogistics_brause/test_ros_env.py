@@ -13,7 +13,10 @@ def main(args=None):
     robot.close_vacuum_gripper()
     # robot ptp movement again
     print("AfterCloseTime:",time.asctime( time.localtime(time.time()) ))
+    robot.home_pose = Affine((0.122, -0.052, 1.426), (0.004, 0.860, 0.007, 0.510))
     
+    # move robot to home pose
+    robot.home()
 
     #robot.close_vacuum_gripper()
     # back to home pose
