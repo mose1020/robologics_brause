@@ -99,6 +99,11 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
+          realsense_camera:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
           cell_link:
             Alpha: 1
             Show Axes: false
@@ -218,6 +223,11 @@ Visualization Manager:
             Show Trail: false
             Value: true
           camera:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          realsense_camera:
             Alpha: 1
             Show Axes: false
             Show Trail: false
