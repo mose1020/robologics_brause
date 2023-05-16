@@ -176,4 +176,7 @@ but please do not push your changes to this repository.
 Base  coordinates R3 on metal grid set for easier orientation
 Coordinates:
 0.125 0.324 1.023
+
+Get the coordinates of the current tcp
+ros2 run tf2_ros tf2_echo 'cell_link' 'tcp_link'
    

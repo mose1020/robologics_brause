@@ -18,7 +18,7 @@ def main(args=None):
     #robot.close_vacuum_gripper()
     # back to home pose
     time.sleep(2)
-    print("AfterSleep5:",time.asctime( time.localtime(time.time()) ))
+    print("AfterSleep2:",time.asctime( time.localtime(time.time()) ))
     robot.open_vacuum_gripper()
    
     print('EndTime:',time.asctime( time.localtime(time.time()) ))
