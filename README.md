@@ -1,42 +1,9 @@
 # START DEV CONTAINER / DOCKER
-### Find Rittersport Docker:
+### Find Brause Docker:
 ```
 . start_docker.sh
 ```
 Alternatively: In VSCode click "reopen in conainer"
-
-### Rittersport Node(s):
-Inside docker:
- ```
- colcon build
- ```
-In every terminal do:
- ```
- . install/setup.bash
- ```
-Ritterport pose service server: 
- ```
- ros2 run find_rittersport find_rittersport_pose_service
- ```
-Rittersport behaviour action server:
- ```
- ros2 run rittersport_robot_behaviour action_server
- ```
-Ritterport behaviour action client:
- ```
- ros2 run rittersport_robot_behaviour action_client
- ``` 
-
-### Intel realsense Docker:
- ```
- . rs_start_docker.sh
- ```
-
-Realsense Node launch via:
- ```
- colcon build && . install/setup.bash && \
- ros2 launch realsense_iras rs_camera.launch.py
- ``` 
 
 # GERGELYS STUFF
 # R2E Tutorial
@@ -205,7 +172,8 @@ Realsense Node launch via:
 Note, that this repository is a template repository. You can use it as a starting point for your own ROS2 applications
 but please do not push your changes to this repository.
 
-
-BAse  coordinates R3 on metal grid
+## Specific Ahoi Brause Stuff
+Base  coordinates R3 on metal grid set for easier orientation
+Coordinates:
 0.125 0.324 1.023
    
