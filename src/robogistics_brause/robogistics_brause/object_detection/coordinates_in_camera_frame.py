@@ -8,7 +8,6 @@ import tkinter as tk
 from PIL import Image
 from scipy.interpolate import splprep, splev
 
-
 class ColorSelector:
     
     def __init__(self):
@@ -71,10 +70,7 @@ class ColorImage:
 
     def getTreshold(self):
 
-        "This function detects the biggest area of a color in the image and returns the center of the area in pixel coordinates."
-
         # define the lower and upper boundaries of the colors in the HSV color space
-
         if self.color=="red":
             lower_value = np.array([149, 84, 57], dtype = "uint8") 
             upper_value= np.array([179, 255, 255], dtype = "uint8")
@@ -114,6 +110,9 @@ class ColorImage:
 
         # Convert images to numpy arrays
         color_image = np.asanyarray(color_frame.get_data())
+
+        # Stop streaming
+        pipeline.stop()
 
         return color_image
 
@@ -168,7 +167,7 @@ class ColorImage:
         return x_pixelkoordinate, y_pixelkoordinate
     
 
-class depthImage:
+class DepthImage:
 
     def __init__(self, x_pixelkoordinate, y_pixelkoordinate):
         self.x_pixelkoordinate = x_pixelkoordinate
@@ -188,6 +187,9 @@ class depthImage:
         depth_scale = depth_sensor.get_depth_scale()
         intrinsics = profile.get_stream(rs.stream.depth).as_video_stream_profile().get_intrinsics()
 
+        # Define the range of pixels to consider around the desired pixel
+        pixel_range = 3
+
         # Read a depth frame and get a pixel coordinate
         frames = pipeline.wait_for_frames()
         depth_frame = frames.get_depth_frame()
@@ -195,9 +197,18 @@ class depthImage:
 
         pixel = (self.x_pixelkoordinate, self.y_pixelkoordinate)  # example pixel coordinate
 
+        # Get the depth values for the pixels in the specified range
+        depth_values = []
+        for i in range(pixel[1] - pixel_range, pixel[1] + pixel_range + 1):
+            for j in range(pixel[0] - pixel_range, pixel[0] + pixel_range + 1):
+                if i >= 0 and i < depth_image.shape[0] and j >= 0 and j < depth_image.shape[1]:
+                    depth_values.append(depth_image[i, j])
+
+        # Compute the median depth value
+        median_depth_value = np.median(depth_values)
+
         # Deproject pixel to 3D point in camera coordinates
-        depth_value = depth_image[pixel[1], pixel[0]]
-        point_3d = rs.rs2_deproject_pixel_to_point(intrinsics, pixel, depth_value)
+        point_3d = rs.rs2_deproject_pixel_to_point(intrinsics, pixel, median_depth_value)
 
         x_cameraFrame = point_3d[0]/1000
         y_cameraFrame = point_3d[1]/1000
@@ -207,11 +218,13 @@ class depthImage:
         print("y: ", y_cameraFrame)
         print("z: ", z_cameraFrame)
 
+        # Stop streaming
+        pipeline.stop()
+
         return x_cameraFrame, y_cameraFrame, z_cameraFrame
 
 
-def main():
-
+def getPose():
     color_selector = ColorSelector()
     selected_color = color_selector.get_color()
 
@@ -222,10 +235,14 @@ def main():
 
     x_pixelkoordinate, y_pixelkoordinate = image.getPixelCoordinates(classical_mask, color_image)
 
-    depthImage = depthImage(x_pixelkoordinate, y_pixelkoordinate)
+    depthImage = DepthImage(x_pixelkoordinate, y_pixelkoordinate)
     pipeline, profile = depthImage.startDepthStream()
     x_cameraFrame, y_cameraFrame, z_cameraFrame = depthImage.get3DCoordinates(pipeline, profile)
 
+    return x_cameraFrame, y_cameraFrame, z_cameraFrame
+
+def main():
+    getPose()
 
 if __name__ == "__main__":
     main()
