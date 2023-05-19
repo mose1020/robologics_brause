@@ -177,6 +177,14 @@ Base  coordinates R3 on metal grid set for easier orientation
 Coordinates:
 0.125 0.324 1.023
 
+R5 above position
+0.024, 0.319, 1.121), (0.444, 0.445, 0.550, 0.550)
+R5 pick position 
+0.024, 0.319, 1.021), (0.444, 0.445, 0.550, 0.550)
+
+Check in camera
+-0.126, 0.270, 1.503    -0.554, 0.502, -0.436, 0.501
+
 Get the coordinates of the current tcp
 ros2 run tf2_ros tf2_echo 'cell_link' 'tcp_link'
    
