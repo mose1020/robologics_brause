@@ -19,13 +19,13 @@ def main(args=None):
     #  represents rotation in quaternions (x, y, z, w)
     robot.ptp(Affine((0.048, -0.308, 1.120), (0.000, 0.946, -0.000, -0.324)))
     # open gripper (does nothing when only in simulation)
-    robot.open_gripper()
+    #robot.open_gripper()
     # robot ptp movement again
     robot.ptp(Affine((-0.151, 0.243, 1.111), (0.666, 0.746, 0.014, 0.016)))
     # robot lin movement to given pose
     robot.lin(Affine((-0.051, 0.243, 1.111), (0.666, 0.746, 0.014, 0.016)))
     # close gripper (does nothing when only in simulation)
-    robot.close_gripper()
+    #robot.close_gripper()
     # back to home pose
     robot.home()
 
