@@ -1,14 +1,15 @@
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np 
+import os
 import pyrealsense2 as rs
 import tkinter as tk
 
 from PIL import Image
 from scipy.interpolate import splprep, splev
 
-
 class ColorSelector:
+    
     def __init__(self):
         # Create the main window
         self.root = tk.Tk()
@@ -59,89 +60,189 @@ class ColorSelector:
         return self.color
 
 
-def detection(color):
+class ColorImage:
 
-    "This function detects the biggest area of a color in the image and returns the center of the area in pixel coordinates."
+    def __init__(self, color):
+        self.brightness_value = 60
+        self.saturation_value = 70
+        self.color = color
+        self.folder_path = "images/" 
 
-    # define the lower and upper boundaries of the colors in the HSV color space
-    if color=="red":
-        lower_value = np.array([155, 85, 0], dtype = "uint8") 
-        upper_value= np.array([179, 255, 255], dtype = "uint8")
+    def getTreshold(self):
 
-    if color=="yellow":
-        lower_value = np.array([21, 87, 99], dtype = "uint8") 
-        upper_value= np.array([31, 255, 255], dtype = "uint8")
+        # define the lower and upper boundaries of the colors in the HSV color space
+        if self.color=="red":
+            lower_value = np.array([149, 84, 57], dtype = "uint8") 
+            upper_value= np.array([179, 255, 255], dtype = "uint8")
 
-    if color=="orange":
-        lower_value = np.array([0, 76, 0], dtype = "uint8") 
-        upper_value= np.array([17, 255, 255], dtype = "uint8")
+        if self.color=="yellow":
+            lower_value = np.array([15, 84, 151], dtype = "uint8") 
+            upper_value= np.array([27, 255, 255], dtype = "uint8")
 
-    if color=="green":
-        lower_value = np.array([35, 31, 0], dtype = "uint8") 
-        upper_value= np.array([93, 255, 255], dtype = "uint8")
+        if self.color=="orange":
+            lower_value = np.array([0, 135, 99], dtype = "uint8") 
+            upper_value= np.array([13, 255, 255], dtype = "uint8")
+
+        if self.color=="green":
+            lower_value = np.array([30, 62, 0], dtype = "uint8") 
+            upper_value= np.array([86, 255, 255], dtype = "uint8")
+
+        return lower_value, upper_value
     
-    # Configure color streams
-    pipeline = rs.pipeline()
-    config = rs.config()
-    config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30) # 30
+    def startStream(self):
+        
+        # Configure color streams
+        pipeline = rs.pipeline()
+        config = rs.config()
+        config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
 
-    # Start streaming
-    pipeline.start(config)
+        # Start streaming
+        pipeline.start(config)
 
-    # Wait for a coherent pair of frames: depth and color
-    frames = pipeline.wait_for_frames()
-    color_frame = frames.get_color_frame()
+        # Set the brightness and saturation of the camera
+        color_sensor = pipeline.get_active_profile().get_device().first_color_sensor()
+        color_sensor.set_option(rs.option.brightness, self.brightness_value)
+        color_sensor.set_option(rs.option.saturation, self.saturation_value)
 
-    # Convert images to numpy arrays
-    color_image = np.asanyarray(color_frame.get_data())
+        # Wait for a coherent pair of frames: depth and color
+        frames = pipeline.wait_for_frames()
+        color_frame = frames.get_color_frame()
 
-    hsv = cv2.cvtColor(color_image, cv2.COLOR_BGR2HSV)    # convert to HSV
-    mask0 = cv2.inRange(hsv, lower_value, upper_value)  # mask for color
+        # Convert images to numpy arrays
+        color_image = np.asanyarray(color_frame.get_data())
 
-    kernel = np.ones((15,15),np.uint8)  # 15x15 kernel for morphological transformation
-    opening = cv2.morphologyEx(mask0, cv2.MORPH_OPEN, kernel)
-    kernel = np.ones((5,5),np.uint8)  # 20x20 kernel for morphological transformation
-    closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel)
+        # Stop streaming
+        pipeline.stop()
 
-    contours, hierarchy = cv2.findContours(closing, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE) # find contours
-    c = max(contours, key = cv2.contourArea) # find the biggest contour (c) by the area
+        return color_image
 
-    # find the center of the contour
-    M = cv2.moments(c)
-    cx = int(M['m10']/M['m00'])
-    cy = int(M['m01']/M['m00'])
+    def getClassicalMask(self, color_image, lower_value, upper_value):
 
-    # find the spline
-    tck, u = splprep(c[:,0,:].T, s=0.0)    
-    u_new = np.linspace(u.min(), u.max(), 1000) 
-    x_new, y_new = splev(u_new, tck, der=0)
+        hsv = cv2.cvtColor(color_image, cv2.COLOR_BGR2HSV)    # convert to HSV
+        mask = cv2.inRange(hsv, lower_value, upper_value)  # mask for color
 
-    # plot the spline
-    plt.figure(figsize=(8, 8))
-    plt.imshow(closing, cmap='gray')
-    plt.plot(x_new, y_new, 'r')
-    plt.plot(cx, cy, 'bo') 
-    plt.show()
+        kernel = np.ones((15,15),np.uint8)  # 15x15 kernel for morphological transformation
+        opening = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+        kernel = np.ones((5,5),np.uint8)  # 20x20 kernel for morphological transformation
+        closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel)
+        classical_mask = closing
+
+        return classical_mask
     
-    print("Center of biggest Area in (x,y): (",cx, ",",cy,")")   # print the center of the contour
+    def getPixelCoordinates(self, mask, color_image):
+        
+        contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE) # find contours
+        biggest_contour = max(contours, key = cv2.contourArea) # find the biggest contour (c) by the area
 
-    # show original image with contour of biggest area
-    image = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
-    plt.figure(figsize=(8, 8))
-    plt.imshow(image)
-    plt.plot(x_new, y_new, 'r')
-    plt.plot(cx, cy, 'bo') 
-    plt.show()
+        # find the center of the contour
+        M = cv2.moments(biggest_contour)
+        x_pixelkoordinate = int(M['m10']/M['m00'])
+        y_pixelkoordinate = int(M['m01']/M['m00'])
 
-    return cx, cy
+        # find the spline
+        tck, u = splprep(biggest_contour[:,0,:].T, s=0.0)    
+        u_new = np.linspace(u.min(), u.max(), 1000) 
+        x_new, y_new = splev(u_new, tck, der=0)
+
+        # Create the "images" folder if it doesn't exist
+        os.makedirs(self.folder_path, exist_ok=True)
+
+        # Determine the next image number
+        existing_images = os.listdir(self.folder_path)
+        current_image_number = len(existing_images) + 1
+
+        # Define the filename with the current image number
+        filename = f"image_{current_image_number}.jpg"
+
+        # Show the original image with the contour
+        image = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
+        plt.figure(figsize=(8, 8))
+        plt.imshow(image)
+        plt.plot(x_new, y_new, 'r')
+        plt.plot(x_pixelkoordinate, y_pixelkoordinate, 'bo') 
+
+        # Save the plot image in the "images" folder with the filename
+        plt.savefig(os.path.join(self.folder_path, filename))
+
+        return x_pixelkoordinate, y_pixelkoordinate
+    
+
+class DepthImage:
+
+    def __init__(self, x_pixelkoordinate, y_pixelkoordinate):
+        self.x_pixelkoordinate = x_pixelkoordinate
+        self.y_pixelkoordinate = y_pixelkoordinate
+        
+    def startDepthStream(self):
+        # Initialize RealSense pipeline and get depth sensor intrinsics
+        pipeline = rs.pipeline()
+        config = rs.config()
+        config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
+        profile = pipeline.start(config)
+
+        return pipeline, profile
+        
+    def get3DCoordinates(self, pipeline, profile):
+        depth_sensor = profile.get_device().first_depth_sensor()
+        depth_scale = depth_sensor.get_depth_scale()
+        intrinsics = profile.get_stream(rs.stream.depth).as_video_stream_profile().get_intrinsics()
+
+        # Define the range of pixels to consider around the desired pixel
+        pixel_range = 3
+
+        # Read a depth frame and get a pixel coordinate
+        frames = pipeline.wait_for_frames()
+        depth_frame = frames.get_depth_frame()
+        depth_image = np.asanyarray(depth_frame.get_data())
+
+        pixel = (self.x_pixelkoordinate, self.y_pixelkoordinate)  # example pixel coordinate
+
+        # Get the depth values for the pixels in the specified range
+        depth_values = []
+        for i in range(pixel[1] - pixel_range, pixel[1] + pixel_range + 1):
+            for j in range(pixel[0] - pixel_range, pixel[0] + pixel_range + 1):
+                if i >= 0 and i < depth_image.shape[0] and j >= 0 and j < depth_image.shape[1]:
+                    depth_values.append(depth_image[i, j])
+
+        # Compute the median depth value
+        median_depth_value = np.median(depth_values)
+
+        # Deproject pixel to 3D point in camera coordinates
+        point_3d = rs.rs2_deproject_pixel_to_point(intrinsics, pixel, median_depth_value)
+
+        x_cameraFrame = point_3d[0]/1000
+        y_cameraFrame = point_3d[1]/1000
+        z_cameraFrame = point_3d[2]/1000
+
+        print("x: ", x_cameraFrame)
+        print("y: ", y_cameraFrame)
+        print("z: ", z_cameraFrame)
+
+        # Stop streaming
+        pipeline.stop()
+
+        return x_cameraFrame, y_cameraFrame, z_cameraFrame
 
 
-def main():
-
+def getPose():
     color_selector = ColorSelector()
     selected_color = color_selector.get_color()
-    cx, cy = detection(selected_color)
 
+    image = ColorImage(selected_color)
+    lower_value, upper_value = image.getTreshold()
+    color_image = image.startStream()
+    classical_mask = image.getClassicalMask(color_image, lower_value, upper_value)
+
+    x_pixelkoordinate, y_pixelkoordinate = image.getPixelCoordinates(classical_mask, color_image)
+
+    depthImage = DepthImage(x_pixelkoordinate, y_pixelkoordinate)
+    pipeline, profile = depthImage.startDepthStream()
+    x_cameraFrame, y_cameraFrame, z_cameraFrame = depthImage.get3DCoordinates(pipeline, profile)
+
+    return x_cameraFrame, y_cameraFrame, z_cameraFrame
+
+def main():
+    getPose()
 
 if __name__ == "__main__":
     main()
