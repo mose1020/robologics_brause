@@ -22,7 +22,7 @@ class TfListener(Node):
         self._tf_buffer = Buffer()
         self._tf_listener = TransformListener(self._tf_buffer, self)
         self.cmd_ = Twist ()
-        self.publisher_ = self.create_publisher(Twist, "{}/cmd_vel".format(self.second_name_),10)
+        self.publisher_ = self.create_publisher(Twist, "{}/cmd_vel".format(self.second_name_),10) # change the path
         self.timer = self.create_timer(0.33, self.timer_callback) #30 Hz = 0.333s
 
     def timer_callback(self):
