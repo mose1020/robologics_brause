@@ -28,7 +28,7 @@ class TfListener(Node):
 
 def main():
     rclpy.init()
-    node = TfListener('cell_link', 'tcp_link')
+    node = TfListener('tcp_link', 'cell_link')
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

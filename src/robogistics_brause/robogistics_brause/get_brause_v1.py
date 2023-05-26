@@ -24,25 +24,22 @@ def main(args=None):
     # start with the homepose
     home_pose = [0.177, -0.053, 1.262,0.424, 0.424, 0.566, 0.566]
     home_pose_trans,home_pose_rot = transform_list(home_pose)
-    robot.home_pose = Affine(home_pose_trans,home_pose_rot)
-    robot.home()
+    robot.lin = Affine(home_pose_trans,home_pose_rot)
     pose.goal_pose_reached(home_pose)
 
-
+    # pose 1 etc...
     pose_1 = [0.122, -0.052, 1.426,0.004, 0.860, 0.007, 0.510]
-    pose_1,pose_2 = transform_list(pose_1)
-    robot.ptp(Affine(pose_1,pose_2))
+    pose_1_trans,pose_1_rot = transform_list(pose_1)
+    robot.ptp(Affine(pose_1_trans,pose_1_rot))
     pose.goal_pose_reached(pose_1)
     
-
-    # home_pose = ((0.122, -0.052, 1.426),(0.004, 0.860, 0.007, 0.510))
-    # robot.home_pose = Affine(home_pose)
-
-   
-
-
     
-    
+    # back to the homepose
+    home_pose = [0.177, -0.053, 1.262,0.424, 0.424, 0.566, 0.566]
+    home_pose_trans,home_pose_rot = transform_list(home_pose)
+    robot.lin = Affine(home_pose_trans,home_pose_rot)
+    pose.goal_pose_reached(home_pose)
+
 
     robot.destroy_node()
     # shutdown previously initialized context

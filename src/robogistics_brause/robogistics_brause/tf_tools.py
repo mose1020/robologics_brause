@@ -55,17 +55,16 @@ class PoseTracker:
     def goal_pose_reached(self,goal_pose): 
 
         pose_dif = self.get_pose_dif(goal_pose)
-        print(type(pose_dif))
-        current_tolerance = np.mean(pose_dif)
+        current_tolerance = np.mean(pose_dif[:3])
 
         while current_tolerance > self.tolerance:
-            time.sleep(0.05)
-            print("GoalPose not reached until now")
+            pose_dif = self.get_pose_dif(goal_pose)
+            current_tolerance = np.mean(pose_dif[:3])
+            time.sleep(0.1)
+            print("Current Tolerance to Homepose: ",current_tolerance)
             continue
 
         return True
-
-
 
 
 
