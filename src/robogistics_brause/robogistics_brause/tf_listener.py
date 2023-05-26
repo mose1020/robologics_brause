@@ -1,11 +1,8 @@
-#!/usr/bin/env python3
-
 import rclpy
 from rclpy.node import Node
 from tf2_ros.transform_listener import TransformListener
 from tf2_ros.buffer import Buffer
 from tf2_ros import LookupException
-
 from geometry_msgs.msg import TransformStamped
 
 class TfListener(Node):

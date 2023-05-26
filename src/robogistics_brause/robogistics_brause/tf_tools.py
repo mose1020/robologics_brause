@@ -19,9 +19,10 @@ class TfSubscriber(Node):
 
 class PoseTracker:
 
-    def __init__(self,tf_subscriber):
+    def __init__(self,tf_subscriber,tolerance):
         
         self.tf_subscriber = tf_subscriber
+        self.tolerance = tolerance
 
     def get_current_pose(self):
 
@@ -45,27 +46,30 @@ class PoseTracker:
     def get_pose_dif(self,goal_pose):
 
         current_pose = self.get_current_pose()
-
         current_pose = np.array(current_pose)
         goal_pose = np.array(goal_pose)
-
-
-        print(current_pose)
-        print(goal_pose)
-
         pose_dif = np.subtract(goal_pose,current_pose)
 
         return pose_dif
-
-
-
-
-def transform_list(input_list):
-    if len(input_list) < 4:
-        return None
     
-    output_list = []
-    output_list.append(tuple(input_list[:3]))
-    output_list.append(tuple(input_list[3:]))
-    
-    return tuple(output_list)
+    def goal_pose_reached(self,goal_pose): 
+
+        pose_dif = self.get_pose_dif(goal_pose)
+        print(type(pose_dif))
+        current_tolerance = np.mean(pose_dif)
+
+        while current_tolerance > self.tolerance:
+            time.sleep(0.05)
+            print("GoalPose not reached until now")
+            continue
+
+        return True
+
+
+
+
+
+def transform_list(pose):
+    first_tuple = tuple(pose[:3])
+    second_tuple = tuple(pose[3:])
+    return first_tuple, second_tuple
