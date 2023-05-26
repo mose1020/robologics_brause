@@ -61,7 +61,7 @@ class PoseTracker:
             pose_dif = self.get_pose_dif(goal_pose)
             current_tolerance = np.mean(pose_dif[:3])
             time.sleep(0.1)
-            print("Current Tolerance to Homepose: ",current_tolerance)
+            print("Current Tolerance to Goalpose: ",current_tolerance)
             continue
 
         return True
