@@ -27,7 +27,9 @@ setup(
             # 'geometrie_pub_2 = r2e_demos.geometrie_pub_2:main',
             # 'geometrie_sub = r2e_demos.geometrie_sub:main'
             'test_ros_env = robogistics_brause.test_ros_env:main',
-            'test_ros_env_copy = robogistics_brause.test_ros_env_copy:main'
+            'test_ros_env_copy = robogistics_brause.test_ros_env_copy:main',
+            'get_brause_v1 = robogistics_brause.get_brause_v1:main',
+            'tf_listener = robogistics_brause.tf_listener:main'
         ],
     },
 )

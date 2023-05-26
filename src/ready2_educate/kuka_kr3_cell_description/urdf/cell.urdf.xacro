@@ -87,18 +87,18 @@
         </joint>
         <link name="${prefix}camera">
             <visual>
-                <origin xyz="-0.0875 -0.052527 0.995" rpy="0 0 0"/>
+                <origin xyz="-0.0575 -0.032527 1.01" rpy="0 0 0"/>
                 <geometry>
-                    <box size="0.045 0.053 0.195"/>
+                    <box size="0.09 0.09 0.225"/>
                 </geometry>
-                <material name="gray">
-                    <color rgba="0.5 0.5 0.5 1"/>
+                <material name="red">
+                    <color rgba="0.9 0.5 0.5 0.2"/>
                 </material>
             </visual>
             <collision>
-                <origin xyz="-0.0875 -0.052527 0.995" rpy="0 0 0"/>
+                <origin xyz="-0.0575 -0.032527 1.01" rpy="0 0 0"/>
                 <geometry>
-                    <box size="0.045 0.053 0.195"/>
+                    <box size="0.09 0.09 0.225"/>
                 </geometry>
             </collision>
         </link>
@@ -106,6 +106,44 @@
             <origin xyz="-0.0325 0.264 0.7325" rpy="0 0 0"/>
             <parent link="${prefix}cell_link"/>
             <child link="${prefix}camera"/>
+        </joint>
+        <link name="${prefix}realsense_camera">
+            <visual>
+                <origin xyz="-0.0675 -0.002527 0.910" rpy="0 0 0"/>
+                <geometry>
+                    <box size="0.15 0.055 0.075"/>
+                </geometry>
+                <material name="red">
+                    <color rgba="0.9 0.5 0.5 0.2"/>
+                </material>
+            </visual>
+            <collision>
+                <origin xyz="-0.0675 -0.002527 0.910" rpy="0 0 0"/>
+                <geometry>
+                    <box size="0.15 0.055 0.075"/>
+                </geometry>
+            </collision>
+        </link>
+        <joint name="{prefix}realsense_camera_joint" type="fixed">
+            <origin xyz="-0.0325 0.264 0.7325" rpy="0 0 0"/>
+            <parent link="${prefix}cell_link"/>
+            <child link="${prefix}realsense_camera"/>
+        </joint>
+        <link name="${prefix}realsense_camera_origin">   
+            <visual>
+                    <origin xyz="0.0 -0.0 0.0" rpy="0 0 0"/>
+                    <geometry>
+                        <box size="0.01 0.01 0.01"/>
+                    </geometry>
+                    <material name="red">
+                        <color rgba="0.9 0.5 0.5 0.0"/>
+                    </material>
+                </visual>
+        </link>
+        <joint name="{prefix}realsense_camera_origin_joint" type="fixed">
+            <origin xyz="-0.068 0.260 1.661" rpy="0 3.14159265359 0"/>
+            <parent link="${prefix}cell_link"/>
+            <child link="${prefix}realsense_camera_origin"/>
         </joint>
     </xacro:macro>
 </robot>
