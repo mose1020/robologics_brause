@@ -1,16 +1,9 @@
-#!/usr/bin/env python3
-
-import sys
-import math
-
-from geometry_msgs.msg import Twist
-
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile
 from tf2_ros.transform_listener import TransformListener
 from tf2_ros.buffer import Buffer
 from tf2_ros import LookupException
+from geometry_msgs.msg import TransformStamped
 
 class TfListener(Node):
 
@@ -21,34 +14,21 @@ class TfListener(Node):
         self.get_logger().info("Transforming from {} to {}".format(self.second_name_, self.first_name_))
         self._tf_buffer = Buffer()
         self._tf_listener = TransformListener(self._tf_buffer, self)
-        self.cmd_ = Twist ()
-        self.publisher_ = self.create_publisher(Twist, "{}/cmd_vel".format(self.second_name_),10) # change the path
+        self.publisher_ = self.create_publisher(TransformStamped, "tf_topic/TransformStamped",10) # change the path
         self.timer = self.create_timer(0.33, self.timer_callback) #30 Hz = 0.333s
 
     def timer_callback(self):
         try:
             trans = self._tf_buffer.lookup_transform(self.second_name_, self.first_name_, rclpy.time.Time())
-            print(trans)
-            # self.cmd_.linear.x = math.sqrt(trans.transform.translation.x ** 2 + trans.transform.translation.y ** 2)
-            # self.cmd_.angular.z = 4 * math.atan2(trans.transform.translation.y , trans.transform.translation.x)
-            # self.publisher_.publish(self.cmd_)
+            self.publisher_.publish(trans)
 
         except LookupException as e:
             self.get_logger().error('failed to get transform {} \n'.format(repr(e)))
 
-# def main(argv=sys.argv):
-#     rclpy.init(args=argv)
-#     node = TfListener('cell_link', 'tcp_link')
-#     try:
-#         rclpy.spin(node)
-#     except KeyboardInterrupt:
-#         pass
-#     node.destroy_node()
-#     rclpy.shutdown()
 
 def main():
     rclpy.init()
-    node = TfListener('cell_link', 'tcp_link')
+    node = TfListener('tcp_link', 'cell_link')
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
