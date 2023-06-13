@@ -29,11 +29,19 @@ class ColorSelector:
         self.green_button = tk.Button(self.root, text="Green", bg="green", command=self.select_green, font=("Helvetica", 16), width=10, height=2)
         self.yellow_button = tk.Button(self.root, text="Yellow", bg="yellow", command=self.select_yellow, font=("Helvetica", 16), width=10, height=2)
 
+        # Create two checkboxes
+        self.checkbox_var = tk.StringVar()
+        self.checkbox_var.set("checkbox_classic")  # Set initial selection to checkbox_classic
+        self.checkbox_classic = tk.Checkbutton(self.root, text="Klassisch", variable=self.checkbox_var, onvalue="checkbox_classic", offvalue="", command=self.checkbox_selected)
+        self.checkbox_yolo = tk.Checkbutton(self.root, text="Yolov8", variable=self.checkbox_var, onvalue="checkbox_yolo", offvalue="", command=self.checkbox_selected)
+
         # Pack the buttons into the window using the grid layout manager
         self.red_button.grid(row=0, column=0, padx=10, pady=10)
         self.orange_button.grid(row=0, column=1, padx=10, pady=10)
         self.green_button.grid(row=1, column=0, padx=10, pady=10)
         self.yellow_button.grid(row=1, column=1, padx=10, pady=10)
+        self.checkbox_classic.grid(row=2, column=0, padx=10, pady=10)
+        self.checkbox_yolo.grid(row=2, column=1, padx=10, pady=10)
 
     # Method to select the "red" color
     def select_red(self):
@@ -60,6 +68,49 @@ class ColorSelector:
         self.color = None
         self.root.mainloop()
         return self.color
+    
+    def close_popup(popup):
+    # Function to close the popup window
+        popup.destroy()
+
+    
+    def checkbox_selected(self):
+        # Function to handle checkbox selection
+        checkbox_classic_state = self.checkbox_classic.instate(['selected'])
+        checkbox_yolo_state = self.checkbox_yolo.instate(['selected'])
+
+        if checkbox_classic_state:
+            self.checkbox_yolo.deselect()
+            self.use_yolo = False
+        elif checkbox_yolo_state:
+            self.checkbox_classic.deselect()
+            self.use_yolo = True
+       
+    def open_popup_window(self, message):
+        # Create the popup window
+        popup = tk.Tk()
+
+        # Set the window title
+        popup.title("Frabe nicht vorhanden")
+
+        # Create a label widget with the provided message
+        label = tk.Label(popup, text=message, padx=10, pady=10)
+
+        # Pack the label widget into the window
+        label.pack()
+
+        # Create a button widget labeled "OK"
+        ok_button = tk.Button(popup, text="Verstanden", command=self.close_popup(self.popup))
+
+        # Pack the button widget into the window
+        ok_button.pack()
+
+        # Start the window's event loop
+        popup.mainloop()
+
+   
+
+     
 
 
 class ColorImage:
@@ -290,6 +341,9 @@ def getPose():
 
     else:
         mask = image.getClassicalMask(color_image, lower_value, upper_value)
+
+    if cv2.countNonZero(mask) > 0:
+
 
     x_pixelkoordinate, y_pixelkoordinate = image.getPixelCoordinates(mask, color_image)
 
