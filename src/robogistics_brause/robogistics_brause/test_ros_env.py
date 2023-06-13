@@ -143,11 +143,11 @@ def main(args=None):
     pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550))
     print(pose_from_camera.translation)
     marker.publish_marker(pose_from_camera.translation)
-    time.sleep(15) # fürs video
+    time.sleep(3) # fürs video
     test_picks.pick(pose_from_camera)
-    # test_picks.move_to_camera()
+    test_picks.move_to_camera()
     ###### bildmethode check
-    # test_picks.leave_camera()
+    test_picks.leave_camera()
     marker.publish_marker([0.109, -0.389, 1.22])
 
     # wenn erfolgreich
