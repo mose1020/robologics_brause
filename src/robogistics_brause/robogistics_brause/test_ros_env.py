@@ -39,8 +39,12 @@ class BrausePicker:
             The pre-pose (pre-pick/pre-place pose).
 
         """
-        pre_pose_transform = Affine(translation=(0, 0, -distance))
-        pre_pose = pose * pre_pose_transform
+        #pre_pose_transform = Affine(translation=(0, 0, -distance))
+        #pre_pose = pose * pre_pose_transform
+        
+        # prepose is 10cm above the pick pose
+        pre_pose = Affine((pose.translation[0], pose.translation[1], pose.translation[2] + distance), pose.quat)
+
         return pre_pose
      
     def pick(self, pick_pose: Affine) -> None:
