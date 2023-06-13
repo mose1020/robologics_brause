@@ -4,9 +4,11 @@ import numpy as np
 import os
 import pyrealsense2 as rs
 import tkinter as tk
+import torch
 
 from PIL import Image
 from scipy.interpolate import splprep, splev
+from ultralytics import YOLO
 
 class ColorSelector:
     
@@ -62,11 +64,12 @@ class ColorSelector:
 
 class ColorImage:
 
-    def __init__(self, color):
+    def __init__(self, color, use_yolo):
         self.brightness_value = 60
         self.saturation_value = 70
         self.color = color
         self.folder_path = "images/" 
+        self.use_yolo = use_yolo
 
     def getTreshold(self):
 
@@ -128,6 +131,55 @@ class ColorImage:
         classical_mask = closing
 
         return classical_mask
+    
+    def getYoloMask(self, color_image):
+
+        model = YOLO(r'src/robogistics_brause/robogistics_brause/object_detection/Yolov8_model/weights/best.pt')
+        results = model.predict(source=color_image, save=True, save_txt=False, stream=True)
+
+        color_index = 0 #color index
+
+        if self.color == "red":
+            color_index = 2
+
+        if self.color == "green":
+            color_index = 0
+
+        if self.color == "yellow":
+            color_index = 3
+
+        if self.color == "orange":
+            color_index = 1
+
+        all_masks = []
+        for result in results:
+            
+            # get array results
+            masks = result.masks.masks
+            boxes = result.boxes.boxes
+            # extract classes
+            clss = boxes[:, 5]
+            # get indices of results where class is 0 (people in COCO)
+            people_indices = torch.where(clss == color_index)
+            # use these indices to extract the relevant masks
+            for index in people_indices:
+                people_masks = masks[index]
+                for i in range(len(people_masks)):
+
+                    result_mask = people_masks[i].cpu().numpy()
+                    all_masks.append(result_mask)
+
+        max_ones = 0
+        max_mask = None
+
+        for mask in all_masks:
+            ones = sum(row.count(1) for row in mask)
+            if ones > max_ones:
+                max_ones = ones
+                max_mask = mask
+
+        return max_mask
+
     
     def getPixelCoordinates(self, mask, color_image):
         
@@ -228,12 +280,18 @@ def getPose():
     color_selector = ColorSelector()
     selected_color = color_selector.get_color()
 
-    image = ColorImage(selected_color)
+    image = ColorImage(selected_color,True)
     lower_value, upper_value = image.getTreshold()
     color_image = image.startStream()
-    classical_mask = image.getClassicalMask(color_image, lower_value, upper_value)
 
-    x_pixelkoordinate, y_pixelkoordinate = image.getPixelCoordinates(classical_mask, color_image)
+    mask =[]
+    if image.use_yolo:
+        mask = image.getYoloMask(color_image)
+
+    else:
+        mask = image.getClassicalMask(color_image, lower_value, upper_value)
+
+    x_pixelkoordinate, y_pixelkoordinate = image.getPixelCoordinates(mask, color_image)
 
     depthImage = DepthImage(x_pixelkoordinate, y_pixelkoordinate)
     pipeline, profile = depthImage.startDepthStream()
