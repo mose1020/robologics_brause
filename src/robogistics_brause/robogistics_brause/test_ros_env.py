@@ -9,8 +9,6 @@ from geometry_msgs.msg import Point
 from std_msgs.msg import ColorRGBA
 
 
-
-
 class BrausePicker:
     def __init__(
             self,
@@ -69,13 +67,6 @@ class BrausePicker:
         """
         self.robot.home()
         pre_pick = self.get_pre_pose(pick_pose, distance=0.1)
-        #time.sleep(1.0)
-        # print("pre_pick")
-        # print(pre_pick)
-
-        # print("pick_pose")
-        # print(pick_pose)
-
         self.robot.ptp(pre_pick)
         self.robot.close_vacuum_gripper()
         self.robot.lin(pick_pose)
@@ -128,8 +119,6 @@ class MarkerPublisher(Node):
         marker_msg.header.frame_id = 'cell_link'  # Set the frame ID for the marker
         marker_msg.type = Marker.SPHERE  # Set the marker type to a sphere (can be changed based on your requirements)
         
-        # Retrieve marker position from the parameter
-        #position = self.get_parameter('marker_position').value
         marker_msg.pose.position = Point(x=position[0], y=position[1], z=position[2])  # Set the X, Y, Z coordinates
         
         marker_msg.scale.x = 0.2  # Set the scale of the marker
