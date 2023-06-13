@@ -69,9 +69,7 @@ class ColorSelector:
         self.root.mainloop()
         return self.color
     
-    def close_popup(popup):
-    # Function to close the popup window
-        popup.destroy()
+    
 
     
     def checkbox_selected(self):
@@ -85,8 +83,12 @@ class ColorSelector:
         elif checkbox_yolo_state:
             self.checkbox_classic.deselect()
             self.use_yolo = True
-       
-    def open_popup_window(self, message):
+
+class Popup: 
+    def close_popup(popup):
+    # Function to close the popup window
+        popup.destroy()
+    def open_popup_window(message):
         # Create the popup window
         popup = tk.Tk()
 
@@ -343,15 +345,18 @@ def getPose():
         mask = image.getClassicalMask(color_image, lower_value, upper_value)
 
     if cv2.countNonZero(mask) > 0:
+        x_pixelkoordinate, y_pixelkoordinate = image.getPixelCoordinates(mask, color_image)
 
+        depthImage = DepthImage(x_pixelkoordinate, y_pixelkoordinate)
+        pipeline, profile = depthImage.startDepthStream()
+        x_cameraFrame, y_cameraFrame, z_cameraFrame = depthImage.get3DCoordinates(pipeline, profile)
 
-    x_pixelkoordinate, y_pixelkoordinate = image.getPixelCoordinates(mask, color_image)
+        return x_cameraFrame, y_cameraFrame, z_cameraFrame
+    else:
+        popup_window = Popup()
+        popup_window.open_popup_window("Die Farbe ist nicht vorhanden. Bitte wählen Sie eine andere aus.")
+        return
 
-    depthImage = DepthImage(x_pixelkoordinate, y_pixelkoordinate)
-    pipeline, profile = depthImage.startDepthStream()
-    x_cameraFrame, y_cameraFrame, z_cameraFrame = depthImage.get3DCoordinates(pipeline, profile)
-
-    return x_cameraFrame, y_cameraFrame, z_cameraFrame
 
 def main():
     getPose()
