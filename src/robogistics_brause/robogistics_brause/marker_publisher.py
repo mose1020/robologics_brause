@@ -8,19 +8,23 @@ class MarkerPublisher(Node):
     def __init__(self):
         super().__init__('marker_publisher')
         self.publisher_ = self.create_publisher(Marker, 'visualization_marker', 10)
-        timer_period = 1.0  # 1 second
-        self.timer = self.create_timer(timer_period, self.publish_marker)
+        self.declare_parameter('marker_position', [0.0, 0.0, 1.2])  # Declare parameter with default position
         self.get_logger().info('Marker publisher node initialized')
 
     def publish_marker(self):
         marker_msg = Marker()
-        marker_msg.header.frame_id = 'cell_link'  # Set the frame ID for the marker
+        marker_msg.header.frame_id = 'base_link'  # Set the frame ID for the marker
         marker_msg.type = Marker.SPHERE  # Set the marker type to a sphere (can be changed based on your requirements)
-        marker_msg.pose.position = Point(x=1.0, y=2.0, z=0.0)  # Set the X, Y, Z coordinates
-        marker_msg.scale.x = 1.0  # Set the scale of the marker
-        marker_msg.scale.y = 1.0
-        marker_msg.scale.z = 0.1
+        
+        # Retrieve marker position from the parameter
+        position = self.get_parameter('marker_position').value
+        marker_msg.pose.position = Point(x=position[0], y=position[1], z=position[2])  # Set the X, Y, Z coordinates
+        
+        marker_msg.scale.x = 0.02  # Set the scale of the marker
+        marker_msg.scale.y = 0.02
+        marker_msg.scale.z = 0.001
         marker_msg.color = ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)  # Set the color (red in this example)
+        
         self.publisher_.publish(marker_msg)
         self.get_logger().info('Marker published')
 

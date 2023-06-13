@@ -1,7 +1,21 @@
 import rclpy
+from rclpy.node import Node
 from ros_environment.scene import RobotClient
 from ros_environment.transform import Affine
 import time
+from std_msgs.msg import Float32MultiArray
+
+class Marker(Node):
+    def __init__(self):
+        super().__init__('main_script')
+        self.publisher_ = self.create_publisher(Float32MultiArray, 'marker_position', 10)
+        self.get_logger().info('Main script node initialized')
+
+    def update_marker_position(self, position):
+        marker_position = Float32MultiArray(data=position)
+        self.publisher_.publish(marker_position)
+        self.get_logger().info('Marker position updated')
+
 class BrausePicker:
     def __init__(
             self,
@@ -107,16 +121,25 @@ class BrausePicker:
         """
         self.robot.destroy_node()
 
+def update_marker_position(position):
+    rclpy.init()
+    node = rclpy.create_node('position_updater')
+    publisher = node.create_publisher(Float32MultiArray, 'marker_position', 10)
+    marker_position = Float32MultiArray(data=position)
+
 def main(args=None):
 
     # initialize ros communications for a given context
     rclpy.init(args=args)
+
+    marker = Marker()
+
     # create a new demo instance
     test_picks = BrausePicker(is_simulation=False)
 
     # user chooses color and if its available the robot picks it otherwise new color is chosen
     pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550))
-
+    marker.update_marker_position(pose_from_camera.translation)
     time.sleep(3) # fürs video
     test_picks.pick(pose_from_camera)
     test_picks.move_to_camera()
