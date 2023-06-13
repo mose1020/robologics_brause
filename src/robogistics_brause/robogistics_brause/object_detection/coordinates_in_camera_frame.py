@@ -45,22 +45,22 @@ class ColorSelector:
 
     # Method to select the "red" color
     def select_red(self):
-        self.root.destroy()
+        #self.root.destroy()
         self.color = "red"
 
     # Method to select the "orange" color
     def select_orange(self):
-        self.root.destroy()
+        #self.root.destroy()
         self.color = "orange"
 
     # Method to select the "green" color
     def select_green(self):
-        self.root.destroy()
+        #self.root.destroy()
         self.color = "green"
 
     # Method to select the "yellow" color
     def select_yellow(self):
-        self.root.destroy()
+        #self.root.destroy()
         self.color = "yellow"
 
     # Method to show the color selector window and return the selected color
