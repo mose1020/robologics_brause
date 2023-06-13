@@ -4,22 +4,17 @@ from ros_environment.scene import RobotClient
 from ros_environment.transform import Affine
 import time
 from std_msgs.msg import Float32MultiArray
+from visualization_msgs.msg import Marker
+from geometry_msgs.msg import Point
+from std_msgs.msg import ColorRGBA
 
-class Marker(Node):
-    def __init__(self):
-        super().__init__('main_script')
-        self.publisher_ = self.create_publisher(Float32MultiArray, 'marker_position', 10)
-        self.get_logger().info('Main script node initialized')
 
-    def update_marker_position(self, position):
-        marker_position = Float32MultiArray(data=position)
-        self.publisher_.publish(marker_position)
-        self.get_logger().info('Marker position updated')
+
 
 class BrausePicker:
     def __init__(
             self,
-            is_simulation: bool = False,
+            is_simulation: bool = True,
             home_pose: Affine = Affine((0.006, -0.053, 1.216), (0.608, 0.608, 0.361, 0.361)),
             ) -> None:
         """ Initialize the cubes demo class.
@@ -121,30 +116,50 @@ class BrausePicker:
         """
         self.robot.destroy_node()
 
-def update_marker_position(position):
-    rclpy.init()
-    node = rclpy.create_node('position_updater')
-    publisher = node.create_publisher(Float32MultiArray, 'marker_position', 10)
-    marker_position = Float32MultiArray(data=position)
+class MarkerPublisher(Node):
+    def __init__(self):
+        super().__init__('marker_publisher')
+        self.publisher_ = self.create_publisher(Marker, 'visualization_marker', 10)
+        self.declare_parameter('marker_position', [0.0, 0.0, 1.2])  # Declare parameter with default position
+        self.get_logger().info('Marker publisher node initialized')
+
+    def publish_marker(self,position):
+        marker_msg = Marker()
+        marker_msg.header.frame_id = 'cell_link'  # Set the frame ID for the marker
+        marker_msg.type = Marker.SPHERE  # Set the marker type to a sphere (can be changed based on your requirements)
+        
+        # Retrieve marker position from the parameter
+        #position = self.get_parameter('marker_position').value
+        marker_msg.pose.position = Point(x=position[0], y=position[1], z=position[2])  # Set the X, Y, Z coordinates
+        
+        marker_msg.scale.x = 0.2  # Set the scale of the marker
+        marker_msg.scale.y = 0.2
+        marker_msg.scale.z = 0.001
+        marker_msg.color = ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)  # Set the color (red in this example)
+        
+        self.publisher_.publish(marker_msg)
+        self.get_logger().info('Marker published')
 
 def main(args=None):
 
     # initialize ros communications for a given context
     rclpy.init(args=args)
 
-    marker = Marker()
+    marker = MarkerPublisher()
 
     # create a new demo instance
     test_picks = BrausePicker(is_simulation=False)
 
     # user chooses color and if its available the robot picks it otherwise new color is chosen
     pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550))
-    marker.update_marker_position(pose_from_camera.translation)
-    time.sleep(3) # fürs video
+    print(pose_from_camera.translation)
+    marker.publish_marker(pose_from_camera.translation)
+    time.sleep(15) # fürs video
     test_picks.pick(pose_from_camera)
-    test_picks.move_to_camera()
+    # test_picks.move_to_camera()
     ###### bildmethode check
-    test_picks.leave_camera()
+    # test_picks.leave_camera()
+    marker.publish_marker([0.109, -0.389, 1.22])
 
     # wenn erfolgreich
     test_picks.drop_at_slide()

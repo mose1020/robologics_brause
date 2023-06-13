@@ -11,13 +11,13 @@ class MarkerPublisher(Node):
         self.declare_parameter('marker_position', [0.0, 0.0, 1.2])  # Declare parameter with default position
         self.get_logger().info('Marker publisher node initialized')
 
-    def publish_marker(self):
+    def publish_marker(self,position):
         marker_msg = Marker()
         marker_msg.header.frame_id = 'base_link'  # Set the frame ID for the marker
         marker_msg.type = Marker.SPHERE  # Set the marker type to a sphere (can be changed based on your requirements)
         
         # Retrieve marker position from the parameter
-        position = self.get_parameter('marker_position').value
+        #position = self.get_parameter('marker_position').value
         marker_msg.pose.position = Point(x=position[0], y=position[1], z=position[2])  # Set the X, Y, Z coordinates
         
         marker_msg.scale.x = 0.02  # Set the scale of the marker
