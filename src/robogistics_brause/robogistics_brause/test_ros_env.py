@@ -83,18 +83,18 @@ def main(args=None):
     # initialize ros communications for a given context
     rclpy.init(args=args)
     # create a new demo instance
-    BrausePicker = BrausePicker(is_simulation=False)
+    test_picks = BrausePicker(is_simulation=False)
 
     # user chooses color and if its available the robot picks it otherwise new color is chosen
     pose_from_camera = Affine((0.024, 0.319, 1.021), (0.444, 0.445, 0.550, 0.550))
 
-    BrausePicker.pick(pose_from_camera)
+    test_picks.pick(pose_from_camera)
 
-    BrausePicker.drop_at_slide()
+    test_picks.drop_at_slide()
 
 
     
-    BrausePicker.shutdown_demo()
+    test_picks.shutdown_demo()
     # shutdown previously initialized context
     rclpy.shutdown()
 
