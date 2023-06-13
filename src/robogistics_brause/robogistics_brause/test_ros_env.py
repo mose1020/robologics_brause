@@ -107,7 +107,8 @@ class BrausePicker:
         """
         self.robot.destroy_node()
 
-class MarkerPublisher(Node):
+class MarkerPublisher(Node): # Wenn der Marker verschwindet --> vielleicht is der dann in der Roboterbox (wenn tiefbild zu ungenau)
+                                                            # --> scale.z von marker in dem fall erhöhen
     def __init__(self):
         super().__init__('marker_publisher')
         self.publisher_ = self.create_publisher(Marker, 'visualization_marker', 10)
