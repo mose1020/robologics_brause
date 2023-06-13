@@ -54,9 +54,17 @@ class BrausePicker:
             The pick pose.
 
         """
-        self.robot.close_vacuum_gripper()
+        
         pre_pick = self.get_pre_pose(pick_pose, distance=0.1)
+        time.sleep(1.0)
+        print("pre_pick")
+        print(pre_pick)
+
+        print("pick_pose")
+        print(pick_pose)
+
         self.robot.ptp(pre_pick)
+        self.robot.close_vacuum_gripper()
         self.robot.lin(pick_pose)
         #maybe a wait is needed here
         self.robot.lin(pre_pick) 
@@ -72,6 +80,13 @@ class BrausePicker:
         self.robot.ptp(Affine((0.109, -0.389, 1.221), (0.497, 0.497, 0.503, 0.503)))
         self.robot.open_vacuum_gripper()
         #time.sleep(1.0)
+
+    def home(self) -> None:
+        """ Move the robot to its home pose.
+
+        """
+        self.robot.home()
+
     def shutdown(self) -> None:
         """ Finish up the demo by destroying the RobotClient node.
             
@@ -90,11 +105,12 @@ def main(args=None):
 
     test_picks.pick(pose_from_camera)
 
+    test_picks.home()
     test_picks.drop_at_slide()
 
 
     
-    test_picks.shutdown_demo()
+    test_picks.shutdown()
     # shutdown previously initialized context
     rclpy.shutdown()
 
