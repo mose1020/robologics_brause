@@ -6,7 +6,7 @@ class BrausePicker:
     def __init__(
             self,
             is_simulation: bool = False,
-            home_pose: Affine = Affine((0.0, -0.05, 1.4), (0.608, 0.608, 0.361, 0.361)),
+            home_pose: Affine = Affine((0.006, -0.053, 1.216), (0.608, 0.608, 0.361, 0.361)),
             ) -> None:
         """ Initialize the cubes demo class.
 
@@ -58,32 +58,42 @@ class BrausePicker:
             The pick pose.
 
         """
-        
+        self.robot.home()
         pre_pick = self.get_pre_pose(pick_pose, distance=0.1)
-        time.sleep(1.0)
-        print("pre_pick")
-        print(pre_pick)
+        #time.sleep(1.0)
+        # print("pre_pick")
+        # print(pre_pick)
 
-        print("pick_pose")
-        print(pick_pose)
+        # print("pick_pose")
+        # print(pick_pose)
 
         self.robot.ptp(pre_pick)
         self.robot.close_vacuum_gripper()
         self.robot.lin(pick_pose)
         #maybe a wait is needed here
         self.robot.lin(pre_pick) 
+        self.robot.home()
 
     def move_to_camera(self) -> None:
-        #move to camera position via home to avoid collision and entanglement
         self.robot.home()
-        self.robot.ptp(Affine((-0.126, 0.270, 1.503), (-0.554, 0.502, -0.436, 0.501)))
-        #time.sleep(1.0)   
+        #move to camera position via home to avoid collision and entanglement
+        self.robot.ptp(Affine((0.051, 0.182, 1.319), (0.732, 0.451, 0.434, 0.268)))
+        self.robot.ptp(Affine((0.028, 0.293, 1.277), (0.848, 0.140, 0.504, 0.084)))
+        self.robot.ptp(Affine((-0.101, 0.261, 1.507), (-0.724, -0.063, 0.025, 0.687)))
+
+    def leave_camera(self) -> None:
+        self.robot.ptp(Affine((0.028, 0.293, 1.277), (0.848, 0.140, 0.504, 0.084)))
+        self.robot.ptp(Affine((0.051, 0.182, 1.319), (0.732, 0.451, 0.434, 0.268)))
+        self.robot.home()
+
 
     def drop_at_slide(self) -> None:
         #drop position
+        self.robot.home()
         self.robot.ptp(Affine((0.109, -0.389, 1.221), (0.497, 0.497, 0.503, 0.503)))
         self.robot.open_vacuum_gripper()
-        #time.sleep(1.0)
+        time.sleep(2.0)
+        self.robot.home()
 
     def home(self) -> None:
         """ Move the robot to its home pose.
@@ -105,17 +115,16 @@ def main(args=None):
     test_picks = BrausePicker(is_simulation=False)
 
     # user chooses color and if its available the robot picks it otherwise new color is chosen
-    pose_from_camera = Affine((0.024, 0.319, 1.041), (0.444, 0.445, 0.550, 0.550))
+    pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550))
 
-
-    test_picks.home()
-
-
+    time.sleep(3) # fürs video
     test_picks.pick(pose_from_camera)
+    test_picks.move_to_camera()
+    ###### bildmethode check
+    test_picks.leave_camera()
 
-    test_picks.home()
+    # wenn erfolgreich
     test_picks.drop_at_slide()
-    test_picks.home()
 
     
     test_picks.shutdown()
@@ -124,3 +133,15 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+
+
+# - Translation: [0.051, 0.182, 1.319]
+# - Rotation: in Quaternion [0.732, 0.451, 0.434, 0.268]
+
+# - Translation: [0.028, 0.293, 1.277]
+# - Rotation: in Quaternion [0.848, 0.140, 0.504, 0.084]
+
+# - Translation: [-0.101, 0.261, 1.507]
+# - Rotation: in Quaternion [-0.724, -0.063, 0.025, 0.687]
+
+
