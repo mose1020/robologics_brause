@@ -1,7 +1,6 @@
 import rclpy
 from ros_environment.scene import RobotClient
 from ros_environment.transform import Affine
-from object_detection.
 import time
 class BrausePicker:
     def __init__(
@@ -23,7 +22,7 @@ class BrausePicker:
         self.robot = RobotClient(is_simulation=is_simulation)
         self.robot.home_pose=home_pose
     
-    def get_pre_pose(self, pose: Affine, distance: float = 0.05) -> Affine:
+    def get_pre_pose(self, pose: Affine, distance: float = 0.1) -> Affine:
         """ Calculate the pre-pick and pre-place pose with the given distance 
         to the given pose.
 
@@ -87,8 +86,11 @@ def main(args=None):
     BrausePicker = BrausePicker(is_simulation=False)
 
     # user chooses color and if its available the robot picks it otherwise new color is chosen
-    pose_from_camerea = 
+    pose_from_camera = Affine((0.024, 0.319, 1.021), (0.444, 0.445, 0.550, 0.550))
 
+    BrausePicker.pick(pose_from_camera)
+
+    BrausePicker.drop_at_slide()
 
 
     
