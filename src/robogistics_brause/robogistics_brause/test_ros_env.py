@@ -6,7 +6,7 @@ class BrausePicker:
     def __init__(
             self,
             is_simulation: bool = False,
-            home_pose: Affine = Affine((0.122, -0.052, 1.426), (0.004, 0.860, 0.007, 0.510)),
+            home_pose: Affine = Affine((0.0, -0.05, 1.4), (0.608, 0.608, 0.361, 0.361)),
             ) -> None:
         """ Initialize the cubes demo class.
 
@@ -105,13 +105,17 @@ def main(args=None):
     test_picks = BrausePicker(is_simulation=False)
 
     # user chooses color and if its available the robot picks it otherwise new color is chosen
-    pose_from_camera = Affine((0.024, 0.319, 1.021), (0.444, 0.445, 0.550, 0.550))
+    pose_from_camera = Affine((0.024, 0.319, 1.041), (0.444, 0.445, 0.550, 0.550))
+
+
+    test_picks.home()
+
 
     test_picks.pick(pose_from_camera)
 
     test_picks.home()
     test_picks.drop_at_slide()
-
+    test_picks.home()
 
     
     test_picks.shutdown()

@@ -6,7 +6,7 @@ class BrausePicker:
     def __init__(
             self,
             is_simulation: bool = False,
-            home_pose: Affine = Affine((0.122, -0.052, 1.426), (0.004, 0.860, 0.007, 0.510)),
+            home_pose: Affine = Affine((0.0, -0.05, 1.4), (0.608, 0.608, 0.361, 0.361)),
             ) -> None:
         """ Initialize the cubes demo class.
 
