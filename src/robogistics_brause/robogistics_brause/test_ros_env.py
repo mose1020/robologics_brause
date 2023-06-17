@@ -14,9 +14,10 @@ from geometry_msgs.msg import TransformStamped
 import tf2_ros
 import tf2_geometry_msgs
 import geometry_msgs.msg
+from geometry_msgs.msg import Point
 
-#from .coordinates_in_camera_frame_leon import getPose
-from .coordinates_in_camera_frame import getPose
+from .coordinates_in_camera_frame_leon import getPose
+#from .coordinates_in_camera_frame import getPose
 
 
 class BrausePicker:
@@ -132,9 +133,9 @@ class MarkerPublisher(Node): # Wenn der Marker verschwindet --> vielleicht is de
         
         marker_msg.pose.position = Point(x=position[0], y=position[1], z=position[2])  # Set the X, Y, Z coordinates
         
-        marker_msg.scale.x = 0.05  # Set the scale of the marker
-        marker_msg.scale.y = 0.05
-        marker_msg.scale.z = 0.001
+        marker_msg.scale.x = 0.1  # Set the scale of the marker
+        marker_msg.scale.y = 0.1
+        marker_msg.scale.z = 0.005
         marker_msg.color = ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)  # Set the color (red in this example)
         
         self.publisher_.publish(marker_msg)
@@ -175,9 +176,6 @@ class TfTransformer:
         source_pose_.position.y = source_pose[1]
         source_pose_.position.z = source_pose[2]
 
-        #transform = msg.transform
-        print(type(transform))
-        print(type(source_pose))
         transformed_pose = tf2_geometry_msgs.do_transform_pose(source_pose_, transform)
  
         return transformed_pose
@@ -193,21 +191,20 @@ def main(args=None):
     tf_subscriber = TfSubscriber()
     tf_transformer = TfTransformer(tf_subscriber)
 
+    time.sleep(5)
     # user chooses color and if its available the robot picks it otherwise new color is chosen
     position_from_camera = getPose()
+    print("POSE ", position_from_camera)
     transformed_position = tf_transformer.make_transformation(position_from_camera)
-    print("type_transformed_position",transformed_position.position)
+    print("Transformed_POSE ", position_from_camera)
+    marker.publish_marker([transformed_position.position.x,transformed_position.position.y,1.1]) 
 
+    #pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550)) # Fixposition von Stephe
+
+    pose_from_camera = Affine((transformed_position.position.x,transformed_position.position.y,1.03), (0.444, 0.445, 0.550, 0.550))
+  
     
-
-    marker.publish_marker(transformed_position.position)
-    print("type_cameraposseeeeeeeee",type(pose_from_camera))
-    print("Transformation",tf_transformer.make_transformation(position_from_camera))
-    pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550)) # Fixposition von Stephe
-    print("type_fixposeeeeee",type(pose_from_camera.translation))
-    marker.publish_marker(pose_from_camera.translation)
-    time.sleep(3) # fürs video
-    #test_picks.pick(pose_from_camera)
+    test_picks.pick(pose_from_camera)
 
 
     # test_picks.move_to_camera()
@@ -215,7 +212,7 @@ def main(args=None):
     # test_picks.leave_camera()
     # # wenn erfolgreich
 
-    #test_picks.drop_at_slide()
+    test_picks.drop_at_slide()
 
     
     test_picks.shutdown()
@@ -225,14 +222,5 @@ def main(args=None):
 if __name__ == '__main__':
     main()
 
-
-# - Translation: [0.051, 0.182, 1.319]
-# - Rotation: in Quaternion [0.732, 0.451, 0.434, 0.268]
-
-# - Translation: [0.028, 0.293, 1.277]
-# - Rotation: in Quaternion [0.848, 0.140, 0.504, 0.084]
-
-# - Translation: [-0.101, 0.261, 1.507]
-# - Rotation: in Quaternion [-0.724, -0.063, 0.025, 0.687]
 
 
