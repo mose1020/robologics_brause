@@ -12,6 +12,8 @@ from tf2_ros.buffer import Buffer
 import queue
 from geometry_msgs.msg import TransformStamped
 import tf2_ros
+import tf2_geometry_msgs
+import geometry_msgs.msg
 
 
 class BrausePicker:
@@ -150,18 +152,37 @@ class TfTransformer:
         
         self.tf_subscriber = tf_subscriber
 
-    def get_transformation(self, source_pose):
+    def get_transformation(self):
 
         while self.tf_subscriber.msg_queue.empty():
             rclpy.spin_once(self.tf_subscriber)
             time.sleep(0.01)  # Optional delay to avoid busy waiting
         # Retrieve the message from the queue
         msg = self.tf_subscriber.msg_queue.get()
-        transform = msg.transform
-        print(transform)
-        transformed_pose = tf2_ros.do_transform_pose(source_pose, transform)
-        print(msg)
+
         return msg
+
+    def make_transformation(self, source_pose):
+
+        transform = self.get_transformation()
+
+        # Create a PoseStamped message in the source frame
+        source_pose_ = geometry_msgs.msg.Pose()
+        source_pose_.position.x = source_pose[0]
+        source_pose_.position.y = source_pose[1]
+        source_pose_.position.z = source_pose[2]
+
+        #transform = msg.transform
+        print(type(transform))
+        print(type(source_pose))
+        transformed_pose = tf2_geometry_msgs.do_transform_pose(source_pose_, transform)
+        #transformed_pose = tf2_geometry_msgs.do_transform_pose(source_pose, transform)
+
+        #print("transform", transform)
+        print("Transformed pose: ", transformed_pose)
+ 
+
+        return transformed_pose
 
 
 def main(args=None):
@@ -176,11 +197,11 @@ def main(args=None):
     tf_subscriber = TfSubscriber()
     tf_transformer = TfTransformer(tf_subscriber)
 
-    print(tf_transformer.get_transformation())
-
     # user chooses color and if its available the robot picks it otherwise new color is chosen
+    position_from_camera = [0.070, 0.327, 1.03]
+    print(tf_transformer.make_transformation(position_from_camera))
+
     pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550))
-    
     print(pose_from_camera.translation)
     marker.publish_marker(pose_from_camera.translation)
     time.sleep(3) # fürs video
