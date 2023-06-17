@@ -15,6 +15,8 @@ import tf2_ros
 import tf2_geometry_msgs
 import geometry_msgs.msg
 
+#from object_detection.coordinates_in_camera_frame import *
+
 
 class BrausePicker:
     def __init__(
@@ -176,9 +178,7 @@ class TfTransformer:
         print(type(transform))
         print(type(source_pose))
         transformed_pose = tf2_geometry_msgs.do_transform_pose(source_pose_, transform)
-        #transformed_pose = tf2_geometry_msgs.do_transform_pose(source_pose, transform)
 
-        #print("transform", transform)
         print("Transformed pose: ", transformed_pose)
  
 
