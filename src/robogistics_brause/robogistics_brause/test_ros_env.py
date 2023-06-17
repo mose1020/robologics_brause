@@ -7,6 +7,15 @@ from std_msgs.msg import Float32MultiArray
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
 from std_msgs.msg import ColorRGBA
+from tf2_ros.transform_listener import TransformListener
+from tf2_ros.buffer import Buffer
+import queue
+from geometry_msgs.msg import TransformStamped
+import tf2_ros
+import tf2_geometry_msgs
+import geometry_msgs.msg
+
+#from object_detection.coordinates_in_camera_frame import *
 
 
 class BrausePicker:
@@ -107,7 +116,8 @@ class BrausePicker:
         """
         self.robot.destroy_node()
 
-class MarkerPublisher(Node):
+class MarkerPublisher(Node): # Wenn der Marker verschwindet --> vielleicht is der dann in der Roboterbox (wenn tiefbild zu ungenau)
+                                                            # --> scale.z von marker in dem fall erhöhen
     def __init__(self):
         super().__init__('marker_publisher')
         self.publisher_ = self.create_publisher(Marker, 'visualization_marker', 10)
@@ -121,25 +131,76 @@ class MarkerPublisher(Node):
         
         marker_msg.pose.position = Point(x=position[0], y=position[1], z=position[2])  # Set the X, Y, Z coordinates
         
-        marker_msg.scale.x = 0.2  # Set the scale of the marker
-        marker_msg.scale.y = 0.2
+        marker_msg.scale.x = 0.05  # Set the scale of the marker
+        marker_msg.scale.y = 0.05
         marker_msg.scale.z = 0.001
         marker_msg.color = ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)  # Set the color (red in this example)
         
         self.publisher_.publish(marker_msg)
         self.get_logger().info('Marker published')
 
+class TfSubscriber(Node):
+    def __init__(self):
+        super().__init__('tf_subscriber')
+        self.subscriber = self.create_subscription(TransformStamped, 'tf_topic/TransformStamped', self.listener_callback, 10)
+        self.msg_queue = queue.Queue()
+
+    def listener_callback(self, msg):
+        self.msg_queue.put(msg)
+
+class TfTransformer:
+
+    def __init__(self,tf_subscriber):
+        
+        self.tf_subscriber = tf_subscriber
+
+    def get_transformation(self):
+
+        while self.tf_subscriber.msg_queue.empty():
+            rclpy.spin_once(self.tf_subscriber)
+            time.sleep(0.01)  # Optional delay to avoid busy waiting
+        # Retrieve the message from the queue
+        msg = self.tf_subscriber.msg_queue.get()
+
+        return msg
+
+    def make_transformation(self, source_pose):
+
+        transform = self.get_transformation()
+
+        # Create a PoseStamped message in the source frame
+        source_pose_ = geometry_msgs.msg.Pose()
+        source_pose_.position.x = source_pose[0]
+        source_pose_.position.y = source_pose[1]
+        source_pose_.position.z = source_pose[2]
+
+        #transform = msg.transform
+        print(type(transform))
+        print(type(source_pose))
+        transformed_pose = tf2_geometry_msgs.do_transform_pose(source_pose_, transform)
+
+        print("Transformed pose: ", transformed_pose)
+ 
+
+        return transformed_pose
+
+
 def main(args=None):
 
     # initialize ros communications for a given context
     rclpy.init(args=args)
-
+    # create a new marker publisher instance
     marker = MarkerPublisher()
-
-    # create a new demo instance
+    # create a new brausepicker instance
     test_picks = BrausePicker(is_simulation=False)
+    # create a new tf transformer instance
+    tf_subscriber = TfSubscriber()
+    tf_transformer = TfTransformer(tf_subscriber)
 
     # user chooses color and if its available the robot picks it otherwise new color is chosen
+    position_from_camera = [0.070, 0.327, 1.03]
+    print(tf_transformer.make_transformation(position_from_camera))
+
     pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550))
     print(pose_from_camera.translation)
     marker.publish_marker(pose_from_camera.translation)
@@ -148,7 +209,6 @@ def main(args=None):
     test_picks.move_to_camera()
     ###### bildmethode check
     test_picks.leave_camera()
-    marker.publish_marker([0.109, -0.389, 1.22])
 
     # wenn erfolgreich
     test_picks.drop_at_slide()
