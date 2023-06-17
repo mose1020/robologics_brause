@@ -214,10 +214,6 @@ class DepthImage:
         y_cameraFrame = point_3d[1]/1000
         z_cameraFrame = point_3d[2]/1000
 
-        print("x: ", x_cameraFrame)
-        print("y: ", y_cameraFrame)
-        print("z: ", z_cameraFrame)
-
         # Stop streaming
         pipeline.stop()
 
@@ -240,9 +236,3 @@ def getPose():
     x_cameraFrame, y_cameraFrame, z_cameraFrame = depthImage.get3DCoordinates(pipeline, profile)
 
     return x_cameraFrame, y_cameraFrame, z_cameraFrame
-
-def main():
-    getPose()
-
-if __name__ == "__main__":
-    main()

@@ -15,7 +15,8 @@ import tf2_ros
 import tf2_geometry_msgs
 import geometry_msgs.msg
 
-from .coordinates_in_camera_frame_leon import getPose
+#from .coordinates_in_camera_frame_leon import getPose
+from .coordinates_in_camera_frame import getPose
 
 
 class BrausePicker:
@@ -178,10 +179,7 @@ class TfTransformer:
         print(type(transform))
         print(type(source_pose))
         transformed_pose = tf2_geometry_msgs.do_transform_pose(source_pose_, transform)
-
-        print("Transformed pose: ", transformed_pose)
  
-
         return transformed_pose
 
 
@@ -189,28 +187,35 @@ def main(args=None):
 
     # initialize ros communications for a given context
     rclpy.init(args=args)
-    # create a new marker publisher instance
+
     marker = MarkerPublisher()
-    # create a new brausepicker instance
     test_picks = BrausePicker(is_simulation=False)
-    # create a new tf transformer instance
     tf_subscriber = TfSubscriber()
     tf_transformer = TfTransformer(tf_subscriber)
 
     # user chooses color and if its available the robot picks it otherwise new color is chosen
     position_from_camera = getPose()
-    print(tf_transformer.make_transformation(position_from_camera))
+    transformed_position = tf_transformer.make_transformation(position_from_camera)
+    print("type_transformed_position",transformed_position.position)
 
+    
+
+    marker.publish_marker(transformed_position.position)
+    print("type_cameraposseeeeeeeee",type(pose_from_camera))
+    print("Transformation",tf_transformer.make_transformation(position_from_camera))
     pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550)) # Fixposition von Stephe
+    print("type_fixposeeeeee",type(pose_from_camera.translation))
     marker.publish_marker(pose_from_camera.translation)
     time.sleep(3) # fürs video
-    test_picks.pick(pose_from_camera)
-    test_picks.move_to_camera()
-    ###### bildmethode check
-    test_picks.leave_camera()
+    #test_picks.pick(pose_from_camera)
 
-    # wenn erfolgreich
-    test_picks.drop_at_slide()
+
+    # test_picks.move_to_camera()
+    # ###### bildmethode check
+    # test_picks.leave_camera()
+    # # wenn erfolgreich
+
+    #test_picks.drop_at_slide()
 
     
     test_picks.shutdown()
