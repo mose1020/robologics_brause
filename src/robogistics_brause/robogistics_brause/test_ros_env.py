@@ -15,7 +15,7 @@ import tf2_ros
 import tf2_geometry_msgs
 import geometry_msgs.msg
 
-#from object_detection.coordinates_in_camera_frame import *
+from .coordinates_in_camera_frame_leon import getPose
 
 
 class BrausePicker:
@@ -198,11 +198,10 @@ def main(args=None):
     tf_transformer = TfTransformer(tf_subscriber)
 
     # user chooses color and if its available the robot picks it otherwise new color is chosen
-    position_from_camera = [0.070, 0.327, 1.03]
+    position_from_camera = getPose()
     print(tf_transformer.make_transformation(position_from_camera))
 
-    pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550))
-    print(pose_from_camera.translation)
+    pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550)) # Fixposition von Stephe
     marker.publish_marker(pose_from_camera.translation)
     time.sleep(3) # fürs video
     test_picks.pick(pose_from_camera)
