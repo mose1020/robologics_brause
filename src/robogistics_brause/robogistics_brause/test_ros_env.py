@@ -133,8 +133,8 @@ class MarkerPublisher(Node): # Wenn der Marker verschwindet --> vielleicht is de
         
         marker_msg.pose.position = Point(x=position[0], y=position[1], z=position[2])  # Set the X, Y, Z coordinates
         
-        marker_msg.scale.x = 0.1  # Set the scale of the marker
-        marker_msg.scale.y = 0.1
+        marker_msg.scale.x = 1.0  # Set the scale of the marker
+        marker_msg.scale.y = 1.0
         marker_msg.scale.z = 0.005
         marker_msg.color = ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)  # Set the color (red in this example)
         
@@ -192,19 +192,21 @@ def main(args=None):
     tf_transformer = TfTransformer(tf_subscriber)
 
     time.sleep(5)
+    marker.publish_marker([1.0,1.0,1.1]) 
+    time.sleep(5)
     # user chooses color and if its available the robot picks it otherwise new color is chosen
     position_from_camera = getPose()
     print("POSE ", position_from_camera)
     transformed_position = tf_transformer.make_transformation(position_from_camera)
     print("Transformed_POSE ", position_from_camera)
-    marker.publish_marker([transformed_position.position.x,transformed_position.position.y,1.1]) 
+    marker.publish_marker([2.0,2.0,2.1]) 
 
     #pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550)) # Fixposition von Stephe
 
-    pose_from_camera = Affine((transformed_position.position.x,transformed_position.position.y,1.03), (0.444, 0.445, 0.550, 0.550))
+    #pose_from_camera = Affine((transformed_position.position.x,transformed_position.position.y,1.03), (0.444, 0.445, 0.550, 0.550))
   
     
-    test_picks.pick(pose_from_camera)
+    #test_picks.pick(pose_from_camera)
 
 
     # test_picks.move_to_camera()
@@ -212,7 +214,7 @@ def main(args=None):
     # test_picks.leave_camera()
     # # wenn erfolgreich
 
-    test_picks.drop_at_slide()
+    #test_picks.drop_at_slide()
 
     
     test_picks.shutdown()
