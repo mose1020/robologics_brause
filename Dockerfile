@@ -65,8 +65,11 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir scipy && \
     pip install --no-cache-dir pyrealsense2 && \
     pip install --no-cache-dir tk && \
-    pip install --no-cache-dir Pillow
-
+    pip install --no-cache-dir Pillow && \
+    pip install torch==1.9.1+cpu torchvision==0.10.1+cpu -f https://download.pytorch.org/whl/torch_stable.html && \
+    pip install --no-cache-dir ultralytics
+    
+ENV OMP_NUM_THREADS=1
 
 
 USER root
