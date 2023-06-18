@@ -56,6 +56,7 @@ RUN apt-get update && \
     usbutils \
     udev \
     docker.io \
+    feh \
     && rm -rf /var/lib/apt/lists/*
 
 

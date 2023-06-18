@@ -183,7 +183,25 @@ class ColorImage:
         shutil.move(f"{temp_dir}/{container_path}", destination_dir)
         shutil.rmtree(temp_dir)
 
-    
+    def picSuccessful(self):
+        color_image = self.startStream()
+
+        os.makedirs(self.folder_path, exist_ok=True)
+
+        # Determine the next image number
+        existing_images = os.listdir(self.folder_path)
+        current_image_number = len(existing_images) + 1
+
+        # Define the filename with the current image number
+        filename = f"picSuccessful_{current_image_number}.jpg"
+
+        # Show the original image with the contour
+        image = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
+        plt.figure(figsize=(8, 8))
+        plt.imshow(image)
+
+        # Save the plot image in the "images_realsense/" folder with the filename
+        plt.savefig(os.path.join(self.folder_path, filename))
 
 class DepthImage:
 
@@ -253,4 +271,4 @@ def getPose():
     pipeline, profile = depthImage.startDepthStream()
     x_cameraFrame, y_cameraFrame, z_cameraFrame = depthImage.get3DCoordinates(pipeline, profile)
 
-    return x_cameraFrame, y_cameraFrame, z_cameraFrame
+    return -x_cameraFrame, y_cameraFrame, z_cameraFrame

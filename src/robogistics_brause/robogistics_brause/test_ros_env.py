@@ -16,7 +16,7 @@ import tf2_geometry_msgs
 import geometry_msgs.msg
 from geometry_msgs.msg import Point
 
-from .coordinates_in_camera_frame_leon import getPose
+from .coordinates_in_camera_frame_leon import getPose, ColorImage
 #from .coordinates_in_camera_frame import getPose
 
 
@@ -215,38 +215,47 @@ def main(args=None):
     #tf_subscriber = TfSubscriber()
     #tf_transformer = TfTransformer(tf_subscriber)
 
-    tf_fix = [-0.115,-0.260,1.661]
+    tf_fix = [0.068,-0.260,-1.661] # [0.115,-0.260,1.661] ,0.146
     # user chooses color and if its available the robot picks it otherwise new color is chosen
     position_from_camera = getPose()
     print("POSE ", position_from_camera)
     #transformed_position = tf_transformer.make_transformation(position_from_camera)
-    transformed_position2 = [position_from_camera[0]-tf_fix[0],position_from_camera[1]-tf_fix[1],position_from_camera[2]-tf_fix[2]]
+    transformed_position2 = [position_from_camera[0]-tf_fix[0],position_from_camera[1]-tf_fix[1],-position_from_camera[2]-tf_fix[2]]
+
+    if transformed_position2[2] < 1.01:
+        transformed_position2[2] = 1.01
 
     #print("Transformed_POSE ", transformed_position)
     print("Transformed_POSE 2", transformed_position2)
-    marker_camara_pose.publish_marker([position_from_camera[0],position_from_camera[1],position_from_camera[2]-0.02]) # z immer etwas weniger, dass man den marker sieht
+    marker_camara_pose.publish_marker([position_from_camera[0],position_from_camera[1],-position_from_camera[2]-0.02]) # z immer etwas weniger, dass man den marker sieht
     #marker_transformed_pose.publish_marker([transformed_position.position.x,transformed_position.position.y,1.03]) 
-    marker_transformed_pose.publish_marker([transformed_position2[0],transformed_position2[1],1.03]) 
+    marker_transformed_pose.publish_marker([transformed_position2[0],transformed_position2[1],transformed_position2[2]]) 
     time.sleep(5) # wichtig, das die marker geändert werden
     
     #pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550)) # Fixposition von Stephe
 
-    pose_from_camera = Affine((transformed_position2[0],transformed_position2[1],1.02), (0.444, 0.445, 0.550, 0.550))
+    pose_from_camera = Affine((transformed_position2[0],transformed_position2[1],1.01), (0.444, 0.445, 0.550, 0.550))
   
     
     test_picks.pick(pose_from_camera)
 
 
-    #test_picks.move_to_camera()
+    test_picks.move_to_camera()
+    
     # ###### bildmethode check
-    #test_picks.leave_camera()
+    color_image = ColorImage("red")
+    color_image.picSuccessful()
+
+    test_picks.leave_camera()
     # # wenn erfolgreich
 
     test_picks.drop_at_slide()
 
     
-    #test_picks.shutdown()
+    test_picks.shutdown()
     # shutdown previously initialized context
+
+
     #   translation:
     # x: -0.06800000000034354
     # y: -0.26
