@@ -55,7 +55,9 @@ RUN apt-get update && \
     gedit \
     usbutils \
     udev \
+    docker.io \
     && rm -rf /var/lib/apt/lists/*
+
 
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir numpy && \
@@ -67,10 +69,16 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir tk && \
     pip install --no-cache-dir Pillow && \
     pip install torch==1.9.1+cpu torchvision==0.10.1+cpu -f https://download.pytorch.org/whl/torch_stable.html && \
-    pip install --no-cache-dir ultralytics
-    
-ENV OMP_NUM_THREADS=1
+    pip install --no-cache-dir ultralytics && \
+    pip install docker
 
+# Is needed for Ultralytics  
+ENV OMP_NUM_THREADS=1 
+
+# Is needed to safe the images
+RUN mkdir -m 0700 /images_realsense && \
+    chown 1001:1001 /images_realsense
+ENV XDG_RUNTIME_DIR=/images_realsense
 
 USER root
 RUN DEBIAN_FRONTEND=noninteractive \

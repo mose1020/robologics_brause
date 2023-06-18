@@ -8,6 +8,11 @@ import tkinter as tk
 from PIL import Image
 from scipy.interpolate import splprep, splev
 
+# new imports for transfer from docker to local
+import docker
+import shutil
+
+
 class ColorSelector:
     
     def __init__(self):
@@ -66,7 +71,7 @@ class ColorImage:
         self.brightness_value = 60
         self.saturation_value = 70
         self.color = color
-        self.folder_path = "images/" 
+        self.folder_path = "images_realsense/" 
 
     def getTreshold(self):
 
@@ -146,6 +151,7 @@ class ColorImage:
 
         # Create the "images" folder if it doesn't exist
         os.makedirs(self.folder_path, exist_ok=True)
+        print(self.folder_path)
 
         # Determine the next image number
         existing_images = os.listdir(self.folder_path)
@@ -161,10 +167,23 @@ class ColorImage:
         plt.plot(x_new, y_new, 'r')
         plt.plot(x_pixelkoordinate, y_pixelkoordinate, 'bo') 
 
-        # Save the plot image in the "images" folder with the filename
+        # Save the plot image in the "images_realsense/" folder with the filename
         plt.savefig(os.path.join(self.folder_path, filename))
 
         return x_pixelkoordinate, y_pixelkoordinate
+    
+    def transfer_image_to_local(self):
+        #client = docker.from_env()
+        client = docker.DockerClient(base_url='unix://var/run/docker.sock')
+        container_name_or_id = "brause"
+        container_path = self.folder_path
+        destination_dir = "/images"
+        temp_dir = shutil.mkdtemp()
+        container = client.containers.get(container_name_or_id)
+        container.get_archive(container_path, temp_dir)
+        shutil.move(f"{temp_dir}/{container_path}", destination_dir)
+        shutil.rmtree(temp_dir)
+
     
 
 class DepthImage:

@@ -123,7 +123,7 @@ class MarkerPublisher(Node): # Wenn der Marker verschwindet --> vielleicht is de
     def __init__(self):
         super().__init__('marker_publisher')
         self.publisher_ = self.create_publisher(Marker, 'visualization_marker', 10)
-        self.declare_parameter('marker_position', [0.0, 0.0, 1.2])  # Declare parameter with default position
+        self.declare_parameter('marker_position', [0.0, 0.0, 1.03])  # Declare parameter with default position
         self.get_logger().info('Marker publisher node initialized')
 
     def publish_marker(self,position):
@@ -133,10 +133,33 @@ class MarkerPublisher(Node): # Wenn der Marker verschwindet --> vielleicht is de
         
         marker_msg.pose.position = Point(x=position[0], y=position[1], z=position[2])  # Set the X, Y, Z coordinates
         
-        marker_msg.scale.x = 1.0  # Set the scale of the marker
-        marker_msg.scale.y = 1.0
+        marker_msg.scale.x = 0.05  # Set the scale of the marker
+        marker_msg.scale.y = 0.05
         marker_msg.scale.z = 0.005
-        marker_msg.color = ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)  # Set the color (red in this example)
+        marker_msg.color = ColorRGBA(r=1.0, g=0.0, b=1.0, a=1.0)  # Set the color (red in this example)
+        
+        self.publisher_.publish(marker_msg)
+        self.get_logger().info('Marker published')
+
+class MarkerPublisherCam(Node): # Wenn der Marker verschwindet --> vielleicht is der dann in der Roboterbox (wenn tiefbild zu ungenau)
+                                                            # --> scale.z von marker in dem fall erhöhen
+    def __init__(self):
+        super().__init__('marker_publisher_cam')
+        self.publisher_ = self.create_publisher(Marker, 'visualization_marker_cam', 10)
+        self.declare_parameter('marker_position', [0.0, 0.0, 1.03])  # Declare parameter with default position
+        self.get_logger().info('Marker publisher node initialized')
+
+    def publish_marker(self,position):
+        marker_msg = Marker()
+        marker_msg.header.frame_id = 'realsense_camera'  # Set the frame ID for the marker
+        marker_msg.type = Marker.SPHERE  # Set the marker type to a sphere (can be changed based on your requirements)
+        
+        marker_msg.pose.position = Point(x=position[0], y=position[1], z=position[2])  # Set the X, Y, Z coordinates
+        
+        marker_msg.scale.x = 0.05  # Set the scale of the marker
+        marker_msg.scale.y = 0.05
+        marker_msg.scale.z = 0.005
+        marker_msg.color = ColorRGBA(r=0.0, g=0.0, b=1.0, a=1.0)  # Set the color (red in this example)
         
         self.publisher_.publish(marker_msg)
         self.get_logger().info('Marker published')
@@ -186,20 +209,23 @@ def main(args=None):
     # initialize ros communications for a given context
     rclpy.init(args=args)
 
-    marker = MarkerPublisher()
+    marker_camara_pose = MarkerPublisherCam()
+    marker_transformed_pose = MarkerPublisher()
     test_picks = BrausePicker(is_simulation=False)
     tf_subscriber = TfSubscriber()
     tf_transformer = TfTransformer(tf_subscriber)
 
-    time.sleep(5)
-    marker.publish_marker([1.0,1.0,1.1]) 
-    time.sleep(5)
     # user chooses color and if its available the robot picks it otherwise new color is chosen
     position_from_camera = getPose()
     print("POSE ", position_from_camera)
     transformed_position = tf_transformer.make_transformation(position_from_camera)
-    print("Transformed_POSE ", position_from_camera)
-    marker.publish_marker([2.0,2.0,2.1]) 
+    print("Transformed_POSE ", transformed_position)
+    marker_camara_pose.publish_marker([position_from_camera[0],position_from_camera[1],position_from_camera[2]])
+    marker_transformed_pose.publish_marker([transformed_position.position.x,transformed_position.position.y,1.03]) 
+    time.sleep(5)
+
+    #
+    
 
     #pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550)) # Fixposition von Stephe
 

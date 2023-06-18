@@ -3,7 +3,7 @@ ROS_DISTRO=foxy
 DOMAIN_ID=40
 uid=$(eval "id -u")
 gid=$(eval "id -g")
-             
+          
 docker build --build-arg UID="$uid" \
              --build-arg GID="$gid" \
              --build-arg ROS_DISTRO="$ROS_DISTRO" \
@@ -22,6 +22,7 @@ docker run --name brause \
            -v /dev:/dev \
            -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
            -v $PWD/src:/home/robot/ros2_ws/src:rw \
+           -v /var/run/docker.sock:/var/run/docker.sock \
            --rm \
            -it \
            brause/ros:$ROS_DISTRO
