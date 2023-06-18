@@ -16,7 +16,7 @@ import tf2_geometry_msgs
 import geometry_msgs.msg
 from geometry_msgs.msg import Point
 
-from .coordinates_in_camera_frame_leon import getPose
+from .coordinates_in_camera_frame_leon import getPose, ColorImage
 #from .coordinates_in_camera_frame import getPose
 
 
@@ -222,9 +222,12 @@ def main(args=None):
     #transformed_position = tf_transformer.make_transformation(position_from_camera)
     transformed_position2 = [position_from_camera[0]-tf_fix[0],position_from_camera[1]-tf_fix[1],-position_from_camera[2]-tf_fix[2]]
 
+    if transformed_position2[2] < 1.01:
+        transformed_position2[2] = 1.01
+
     #print("Transformed_POSE ", transformed_position)
     print("Transformed_POSE 2", transformed_position2)
-    marker_camara_pose.publish_marker([position_from_camera[0],position_from_camera[1],-position_from_camera[2]]) # z immer etwas weniger, dass man den marker sieht
+    marker_camara_pose.publish_marker([position_from_camera[0],position_from_camera[1],-position_from_camera[2]-0.02]) # z immer etwas weniger, dass man den marker sieht
     #marker_transformed_pose.publish_marker([transformed_position.position.x,transformed_position.position.y,1.03]) 
     marker_transformed_pose.publish_marker([transformed_position2[0],transformed_position2[1],transformed_position2[2]]) 
     time.sleep(5) # wichtig, das die marker geändert werden
@@ -238,7 +241,11 @@ def main(args=None):
 
 
     test_picks.move_to_camera()
+    
     # ###### bildmethode check
+    color_image = ColorImage("red")
+    color_image.picSuccessful()
+
     test_picks.leave_camera()
     # # wenn erfolgreich
 
