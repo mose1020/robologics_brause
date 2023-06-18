@@ -215,7 +215,7 @@ def main(args=None):
     #tf_subscriber = TfSubscriber()
     #tf_transformer = TfTransformer(tf_subscriber)
 
-    tf_fix = [-0.1150000000034354,-0.26,1.6609999999999858]
+    tf_fix = [-0.115,-0.260,1.661]
     # user chooses color and if its available the robot picks it otherwise new color is chosen
     position_from_camera = getPose()
     print("POSE ", position_from_camera)
