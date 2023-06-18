@@ -13,7 +13,7 @@ class MarkerPublisher(Node):
 
     def publish_marker(self,position):
         marker_msg = Marker()
-        marker_msg.header.frame_id = 'base_link'  # Set the frame ID for the marker
+        marker_msg.header.frame_id = 'cell_link'  # Set the frame ID for the marker
         marker_msg.type = Marker.SPHERE  # Set the marker type to a sphere (can be changed based on your requirements)
         
         # Retrieve marker position from the parameter

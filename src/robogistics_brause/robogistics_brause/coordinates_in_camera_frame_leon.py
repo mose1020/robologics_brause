@@ -4,11 +4,14 @@ import numpy as np
 import os
 import pyrealsense2 as rs
 import tkinter as tk
-import torch
 
 from PIL import Image
 from scipy.interpolate import splprep, splev
-from ultralytics import YOLO
+
+# new imports for transfer from docker to local
+import docker
+import shutil
+
 
 class ColorSelector:
     
@@ -29,38 +32,30 @@ class ColorSelector:
         self.green_button = tk.Button(self.root, text="Green", bg="green", command=self.select_green, font=("Helvetica", 16), width=10, height=2)
         self.yellow_button = tk.Button(self.root, text="Yellow", bg="yellow", command=self.select_yellow, font=("Helvetica", 16), width=10, height=2)
 
-        # Create two checkboxes
-        self.checkbox_var = tk.StringVar()
-        self.checkbox_var.set("checkbox_classic")  # Set initial selection to checkbox_classic
-        self.checkbox_classic = tk.Checkbutton(self.root, text="Klassisch", variable=self.checkbox_var, onvalue="checkbox_classic", offvalue="", command=self.checkbox_selected)
-        self.checkbox_yolo = tk.Checkbutton(self.root, text="Yolov8", variable=self.checkbox_var, onvalue="checkbox_yolo", offvalue="", command=self.checkbox_selected)
-
         # Pack the buttons into the window using the grid layout manager
         self.red_button.grid(row=0, column=0, padx=10, pady=10)
         self.orange_button.grid(row=0, column=1, padx=10, pady=10)
         self.green_button.grid(row=1, column=0, padx=10, pady=10)
         self.yellow_button.grid(row=1, column=1, padx=10, pady=10)
-        self.checkbox_classic.grid(row=2, column=0, padx=10, pady=10)
-        self.checkbox_yolo.grid(row=2, column=1, padx=10, pady=10)
 
     # Method to select the "red" color
     def select_red(self):
-        #self.root.destroy()
+        self.root.destroy()
         self.color = "red"
 
     # Method to select the "orange" color
     def select_orange(self):
-        #self.root.destroy()
+        self.root.destroy()
         self.color = "orange"
 
     # Method to select the "green" color
     def select_green(self):
-        #self.root.destroy()
+        self.root.destroy()
         self.color = "green"
 
     # Method to select the "yellow" color
     def select_yellow(self):
-        #self.root.destroy()
+        self.root.destroy()
         self.color = "yellow"
 
     # Method to show the color selector window and return the selected color
@@ -68,61 +63,15 @@ class ColorSelector:
         self.color = None
         self.root.mainloop()
         return self.color
-    
-    
-
-    
-    def checkbox_selected(self):
-        # Function to handle checkbox selection
-        checkbox_classic_state = self.checkbox_classic.instate(['selected'])
-        checkbox_yolo_state = self.checkbox_yolo.instate(['selected'])
-
-        if checkbox_classic_state:
-            self.checkbox_yolo.deselect()
-            self.use_yolo = False
-        elif checkbox_yolo_state:
-            self.checkbox_classic.deselect()
-            self.use_yolo = True
-
-class Popup: 
-    def close_popup(popup):
-    # Function to close the popup window
-        popup.destroy()
-    def open_popup_window(message):
-        # Create the popup window
-        popup = tk.Tk()
-
-        # Set the window title
-        popup.title("Frabe nicht vorhanden")
-
-        # Create a label widget with the provided message
-        label = tk.Label(popup, text=message, padx=10, pady=10)
-
-        # Pack the label widget into the window
-        label.pack()
-
-        # Create a button widget labeled "OK"
-        ok_button = tk.Button(popup, text="Verstanden", command=self.close_popup(self.popup))
-
-        # Pack the button widget into the window
-        ok_button.pack()
-
-        # Start the window's event loop
-        popup.mainloop()
-
-   
-
-     
 
 
 class ColorImage:
 
-    def __init__(self, color, use_yolo):
+    def __init__(self, color):
         self.brightness_value = 60
         self.saturation_value = 70
         self.color = color
-        self.folder_path = "images/" 
-        self.use_yolo = use_yolo
+        self.folder_path = "images_realsense/" 
 
     def getTreshold(self):
 
@@ -185,55 +134,6 @@ class ColorImage:
 
         return classical_mask
     
-    def getYoloMask(self, color_image):
-
-        model = YOLO(r'src/robogistics_brause/robogistics_brause/object_detection/Yolov8_model/weights/best.pt')
-        results = model.predict(source=color_image, save=True, save_txt=False, stream=True)
-
-        color_index = 0 #color index
-
-        if self.color == "red":
-            color_index = 2
-
-        if self.color == "green":
-            color_index = 0
-
-        if self.color == "yellow":
-            color_index = 3
-
-        if self.color == "orange":
-            color_index = 1
-
-        all_masks = []
-        for result in results:
-            
-            # get array results
-            masks = result.masks.masks
-            boxes = result.boxes.boxes
-            # extract classes
-            clss = boxes[:, 5]
-            # get indices of results where class is 0 (people in COCO)
-            people_indices = torch.where(clss == color_index)
-            # use these indices to extract the relevant masks
-            for index in people_indices:
-                people_masks = masks[index]
-                for i in range(len(people_masks)):
-
-                    result_mask = people_masks[i].cpu().numpy()
-                    all_masks.append(result_mask)
-
-        max_ones = 0
-        max_mask = None
-
-        for mask in all_masks:
-            ones = sum(row.count(1) for row in mask)
-            if ones > max_ones:
-                max_ones = ones
-                max_mask = mask
-
-        return max_mask
-
-    
     def getPixelCoordinates(self, mask, color_image):
         
         contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE) # find contours
@@ -266,10 +166,23 @@ class ColorImage:
         plt.plot(x_new, y_new, 'r')
         plt.plot(x_pixelkoordinate, y_pixelkoordinate, 'bo') 
 
-        # Save the plot image in the "images" folder with the filename
+        # Save the plot image in the "images_realsense/" folder with the filename
         plt.savefig(os.path.join(self.folder_path, filename))
 
         return x_pixelkoordinate, y_pixelkoordinate
+    
+    def transfer_image_to_local(self):
+        #client = docker.from_env()
+        client = docker.DockerClient(base_url='unix://var/run/docker.sock')
+        container_name_or_id = "brause"
+        container_path = self.folder_path
+        destination_dir = "/images"
+        temp_dir = shutil.mkdtemp()
+        container = client.containers.get(container_name_or_id)
+        container.get_archive(container_path, temp_dir)
+        shutil.move(f"{temp_dir}/{container_path}", destination_dir)
+        shutil.rmtree(temp_dir)
+
     
 
 class DepthImage:
@@ -319,10 +232,6 @@ class DepthImage:
         y_cameraFrame = point_3d[1]/1000
         z_cameraFrame = point_3d[2]/1000
 
-        print("x: ", x_cameraFrame)
-        print("y: ", y_cameraFrame)
-        print("z: ", z_cameraFrame)
-
         # Stop streaming
         pipeline.stop()
 
@@ -333,33 +242,15 @@ def getPose():
     color_selector = ColorSelector()
     selected_color = color_selector.get_color()
 
-    image = ColorImage(selected_color,True)
+    image = ColorImage(selected_color)
     lower_value, upper_value = image.getTreshold()
     color_image = image.startStream()
+    classical_mask = image.getClassicalMask(color_image, lower_value, upper_value)
 
-    mask =[]
-    if image.use_yolo:
-        mask = image.getYoloMask(color_image)
+    x_pixelkoordinate, y_pixelkoordinate = image.getPixelCoordinates(classical_mask, color_image)
 
-    else:
-        mask = image.getClassicalMask(color_image, lower_value, upper_value)
+    depthImage = DepthImage(x_pixelkoordinate, y_pixelkoordinate)
+    pipeline, profile = depthImage.startDepthStream()
+    x_cameraFrame, y_cameraFrame, z_cameraFrame = depthImage.get3DCoordinates(pipeline, profile)
 
-    if cv2.countNonZero(mask) > 0:
-        x_pixelkoordinate, y_pixelkoordinate = image.getPixelCoordinates(mask, color_image)
-
-        depthImage = DepthImage(x_pixelkoordinate, y_pixelkoordinate)
-        pipeline, profile = depthImage.startDepthStream()
-        x_cameraFrame, y_cameraFrame, z_cameraFrame = depthImage.get3DCoordinates(pipeline, profile)
-
-        return x_cameraFrame, y_cameraFrame, z_cameraFrame
-    else:
-        popup_window = Popup()
-        popup_window.open_popup_window("Die Farbe ist nicht vorhanden. Bitte wählen Sie eine andere aus.")
-        return
-
-
-def main():
-    getPose()
-
-if __name__ == "__main__":
-    main()
+    return x_cameraFrame, y_cameraFrame, z_cameraFrame

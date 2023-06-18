@@ -14,8 +14,10 @@ from geometry_msgs.msg import TransformStamped
 import tf2_ros
 import tf2_geometry_msgs
 import geometry_msgs.msg
+from geometry_msgs.msg import Point
 
-#from object_detection.coordinates_in_camera_frame import *
+from .coordinates_in_camera_frame_leon import getPose
+#from .coordinates_in_camera_frame import getPose
 
 
 class BrausePicker:
@@ -121,7 +123,7 @@ class MarkerPublisher(Node): # Wenn der Marker verschwindet --> vielleicht is de
     def __init__(self):
         super().__init__('marker_publisher')
         self.publisher_ = self.create_publisher(Marker, 'visualization_marker', 10)
-        self.declare_parameter('marker_position', [0.0, 0.0, 1.2])  # Declare parameter with default position
+        self.declare_parameter('marker_position', [0.0, 0.0, 1.03])  # Declare parameter with default position
         self.get_logger().info('Marker publisher node initialized')
 
     def publish_marker(self,position):
@@ -133,8 +135,31 @@ class MarkerPublisher(Node): # Wenn der Marker verschwindet --> vielleicht is de
         
         marker_msg.scale.x = 0.05  # Set the scale of the marker
         marker_msg.scale.y = 0.05
-        marker_msg.scale.z = 0.001
-        marker_msg.color = ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)  # Set the color (red in this example)
+        marker_msg.scale.z = 0.005
+        marker_msg.color = ColorRGBA(r=1.0, g=0.0, b=1.0, a=1.0)  # Set the color (red in this example)
+        
+        self.publisher_.publish(marker_msg)
+        self.get_logger().info('Marker published')
+
+class MarkerPublisherCam(Node): # Wenn der Marker verschwindet --> vielleicht is der dann in der Roboterbox (wenn tiefbild zu ungenau)
+                                                            # --> scale.z von marker in dem fall erhöhen
+    def __init__(self):
+        super().__init__('marker_publisher_cam')
+        self.publisher_ = self.create_publisher(Marker, 'visualization_marker_cam', 10)
+        self.declare_parameter('marker_position', [0.0, 0.0, 1.03])  # Declare parameter with default position
+        self.get_logger().info('Marker publisher node initialized')
+
+    def publish_marker(self,position):
+        marker_msg = Marker()
+        marker_msg.header.frame_id = 'realsense_camera_origin'  # Set the frame ID for the marker
+        marker_msg.type = Marker.SPHERE  # Set the marker type to a sphere (can be changed based on your requirements)
+        
+        marker_msg.pose.position = Point(x=position[0], y=position[1], z=position[2])  # Set the X, Y, Z coordinates
+        
+        marker_msg.scale.x = 0.05  # Set the scale of the marker
+        marker_msg.scale.y = 0.05
+        marker_msg.scale.z = 0.005
+        marker_msg.color = ColorRGBA(r=0.0, g=0.0, b=1.0, a=1.0)  # Set the color (red in this example)
         
         self.publisher_.publish(marker_msg)
         self.get_logger().info('Marker published')
@@ -174,14 +199,8 @@ class TfTransformer:
         source_pose_.position.y = source_pose[1]
         source_pose_.position.z = source_pose[2]
 
-        #transform = msg.transform
-        print(type(transform))
-        print(type(source_pose))
         transformed_pose = tf2_geometry_msgs.do_transform_pose(source_pose_, transform)
-
-        print("Transformed pose: ", transformed_pose)
  
-
         return transformed_pose
 
 
@@ -189,46 +208,56 @@ def main(args=None):
 
     # initialize ros communications for a given context
     rclpy.init(args=args)
-    # create a new marker publisher instance
-    marker = MarkerPublisher()
-    # create a new brausepicker instance
+
+    marker_camara_pose = MarkerPublisherCam()
+    marker_transformed_pose = MarkerPublisher()
     test_picks = BrausePicker(is_simulation=False)
-    # create a new tf transformer instance
-    tf_subscriber = TfSubscriber()
-    tf_transformer = TfTransformer(tf_subscriber)
+    #tf_subscriber = TfSubscriber()
+    #tf_transformer = TfTransformer(tf_subscriber)
 
+    tf_fix = [-0.115,-0.260,1.661]
     # user chooses color and if its available the robot picks it otherwise new color is chosen
-    position_from_camera = [0.070, 0.327, 1.03]
-    print(tf_transformer.make_transformation(position_from_camera))
+    position_from_camera = getPose()
+    print("POSE ", position_from_camera)
+    #transformed_position = tf_transformer.make_transformation(position_from_camera)
+    transformed_position2 = [position_from_camera[0]-tf_fix[0],position_from_camera[1]-tf_fix[1],position_from_camera[2]-tf_fix[2]]
 
-    pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550))
-    print(pose_from_camera.translation)
-    marker.publish_marker(pose_from_camera.translation)
-    time.sleep(3) # fürs video
+    #print("Transformed_POSE ", transformed_position)
+    print("Transformed_POSE 2", transformed_position2)
+    marker_camara_pose.publish_marker([position_from_camera[0],position_from_camera[1],position_from_camera[2]-0.02]) # z immer etwas weniger, dass man den marker sieht
+    #marker_transformed_pose.publish_marker([transformed_position.position.x,transformed_position.position.y,1.03]) 
+    marker_transformed_pose.publish_marker([transformed_position2[0],transformed_position2[1],1.03]) 
+    time.sleep(5) # wichtig, das die marker geändert werden
+    
+    #pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550)) # Fixposition von Stephe
+
+    pose_from_camera = Affine((transformed_position2[0],transformed_position2[1],1.02), (0.444, 0.445, 0.550, 0.550))
+  
+    
     test_picks.pick(pose_from_camera)
-    test_picks.move_to_camera()
-    ###### bildmethode check
-    test_picks.leave_camera()
 
-    # wenn erfolgreich
+
+    #test_picks.move_to_camera()
+    # ###### bildmethode check
+    #test_picks.leave_camera()
+    # # wenn erfolgreich
+
     test_picks.drop_at_slide()
 
     
-    test_picks.shutdown()
+    #test_picks.shutdown()
     # shutdown previously initialized context
+    #   translation:
+    # x: -0.06800000000034354
+    # y: -0.26
+    # z: 1.6609999999999858
+
+
+
     rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
 
-
-# - Translation: [0.051, 0.182, 1.319]
-# - Rotation: in Quaternion [0.732, 0.451, 0.434, 0.268]
-
-# - Translation: [0.028, 0.293, 1.277]
-# - Rotation: in Quaternion [0.848, 0.140, 0.504, 0.084]
-
-# - Translation: [-0.101, 0.261, 1.507]
-# - Rotation: in Quaternion [-0.724, -0.063, 0.025, 0.687]
 
 
