@@ -28,7 +28,8 @@ class TfListener(Node):
 
 def main():
     rclpy.init()
-    node = TfListener('cell_link', 'realsense_camera')
+    node = TfListener('cell_link', 'realsense_camera_origin')
+    #node = TfListener('realsense_camera_origin', 'cell_link')
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

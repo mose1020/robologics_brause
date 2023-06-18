@@ -151,7 +151,7 @@ class MarkerPublisherCam(Node): # Wenn der Marker verschwindet --> vielleicht is
 
     def publish_marker(self,position):
         marker_msg = Marker()
-        marker_msg.header.frame_id = 'realsense_camera'  # Set the frame ID for the marker
+        marker_msg.header.frame_id = 'realsense_camera_origin'  # Set the frame ID for the marker
         marker_msg.type = Marker.SPHERE  # Set the marker type to a sphere (can be changed based on your requirements)
         
         marker_msg.pose.position = Point(x=position[0], y=position[1], z=position[2])  # Set the X, Y, Z coordinates
@@ -212,39 +212,48 @@ def main(args=None):
     marker_camara_pose = MarkerPublisherCam()
     marker_transformed_pose = MarkerPublisher()
     test_picks = BrausePicker(is_simulation=False)
-    tf_subscriber = TfSubscriber()
-    tf_transformer = TfTransformer(tf_subscriber)
+    #tf_subscriber = TfSubscriber()
+    #tf_transformer = TfTransformer(tf_subscriber)
 
+    tf_fix = [-0.1150000000034354,-0.26,1.6609999999999858]
     # user chooses color and if its available the robot picks it otherwise new color is chosen
     position_from_camera = getPose()
     print("POSE ", position_from_camera)
-    transformed_position = tf_transformer.make_transformation(position_from_camera)
-    print("Transformed_POSE ", transformed_position)
-    marker_camara_pose.publish_marker([position_from_camera[0],position_from_camera[1],position_from_camera[2]])
-    marker_transformed_pose.publish_marker([transformed_position.position.x,transformed_position.position.y,1.03]) 
-    time.sleep(5)
+    #transformed_position = tf_transformer.make_transformation(position_from_camera)
+    transformed_position2 = [position_from_camera[0]-tf_fix[0],position_from_camera[1]-tf_fix[1],position_from_camera[2]-tf_fix[2]]
 
-    #
+    #print("Transformed_POSE ", transformed_position)
+    print("Transformed_POSE 2", transformed_position2)
+    marker_camara_pose.publish_marker([position_from_camera[0],position_from_camera[1],position_from_camera[2]-0.02]) # z immer etwas weniger, dass man den marker sieht
+    #marker_transformed_pose.publish_marker([transformed_position.position.x,transformed_position.position.y,1.03]) 
+    marker_transformed_pose.publish_marker([transformed_position2[0],transformed_position2[1],1.03]) 
+    time.sleep(5) # wichtig, das die marker geändert werden
     
-
     #pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550)) # Fixposition von Stephe
 
-    #pose_from_camera = Affine((transformed_position.position.x,transformed_position.position.y,1.03), (0.444, 0.445, 0.550, 0.550))
+    pose_from_camera = Affine((transformed_position2[0],transformed_position2[1],1.02), (0.444, 0.445, 0.550, 0.550))
   
     
-    #test_picks.pick(pose_from_camera)
+    test_picks.pick(pose_from_camera)
 
 
-    # test_picks.move_to_camera()
+    #test_picks.move_to_camera()
     # ###### bildmethode check
-    # test_picks.leave_camera()
+    #test_picks.leave_camera()
     # # wenn erfolgreich
 
-    #test_picks.drop_at_slide()
+    test_picks.drop_at_slide()
 
     
-    test_picks.shutdown()
+    #test_picks.shutdown()
     # shutdown previously initialized context
+    #   translation:
+    # x: -0.06800000000034354
+    # y: -0.26
+    # z: 1.6609999999999858
+
+
+
     rclpy.shutdown()
 
 if __name__ == '__main__':

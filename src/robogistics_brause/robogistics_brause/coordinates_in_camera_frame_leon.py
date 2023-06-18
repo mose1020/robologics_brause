@@ -151,7 +151,6 @@ class ColorImage:
 
         # Create the "images" folder if it doesn't exist
         os.makedirs(self.folder_path, exist_ok=True)
-        print(self.folder_path)
 
         # Determine the next image number
         existing_images = os.listdir(self.folder_path)
