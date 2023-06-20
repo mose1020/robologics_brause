@@ -15,6 +15,7 @@ import tf2_ros
 import tf2_geometry_msgs
 import geometry_msgs.msg
 from geometry_msgs.msg import Point
+import numpy as np
 
 from .coordinates_in_camera_frame_leon import getPose, ColorImage
 #from .coordinates_in_camera_frame import getPose
@@ -81,7 +82,7 @@ class BrausePicker:
         self.robot.ptp(pre_pick)
         self.robot.close_vacuum_gripper()
         self.robot.lin(pick_pose)
-        #maybe a wait is needed here
+        #maybe a wait is needed here if the brause is not attaching correctly
         self.robot.lin(pre_pick) 
         self.robot.home()
 
@@ -105,6 +106,16 @@ class BrausePicker:
         self.robot.open_vacuum_gripper()
         time.sleep(2.0)
         self.robot.home()
+
+    def drop_it_back(self) -> None:
+        #move to home
+        self.robot.home()
+        #drop it in the middle of the box under the camera
+        self.robot.ptp(Affine((-0.1, 0.26, 1.2), (0.444, 0.445, 0.550, 0.550)))
+        self.robot.open_vacuum_gripper()
+        time.sleep(2.0)
+        self.robot.home()
+
 
     def home(self) -> None:
         """ Move the robot to its home pose.
@@ -164,44 +175,6 @@ class MarkerPublisherCam(Node): # Wenn der Marker verschwindet --> vielleicht is
         self.publisher_.publish(marker_msg)
         self.get_logger().info('Marker published')
 
-class TfSubscriber(Node):
-    def __init__(self):
-        super().__init__('tf_subscriber')
-        self.subscriber = self.create_subscription(TransformStamped, 'tf_topic/TransformStamped', self.listener_callback, 10)
-        self.msg_queue = queue.Queue()
-
-    def listener_callback(self, msg):
-        self.msg_queue.put(msg)
-
-class TfTransformer:
-
-    def __init__(self,tf_subscriber):
-        
-        self.tf_subscriber = tf_subscriber
-
-    def get_transformation(self):
-
-        while self.tf_subscriber.msg_queue.empty():
-            rclpy.spin_once(self.tf_subscriber)
-            time.sleep(0.01)  # Optional delay to avoid busy waiting
-        # Retrieve the message from the queue
-        msg = self.tf_subscriber.msg_queue.get()
-
-        return msg
-
-    def make_transformation(self, source_pose):
-
-        transform = self.get_transformation()
-
-        # Create a PoseStamped message in the source frame
-        source_pose_ = geometry_msgs.msg.Pose()
-        source_pose_.position.x = source_pose[0]
-        source_pose_.position.y = source_pose[1]
-        source_pose_.position.z = source_pose[2]
-
-        transformed_pose = tf2_geometry_msgs.do_transform_pose(source_pose_, transform)
- 
-        return transformed_pose
 
 
 def main(args=None):
@@ -212,46 +185,56 @@ def main(args=None):
     marker_camara_pose = MarkerPublisherCam()
     marker_transformed_pose = MarkerPublisher()
     test_picks = BrausePicker(is_simulation=False)
-    #tf_subscriber = TfSubscriber()
-    #tf_transformer = TfTransformer(tf_subscriber)
-
+    
+    # values for current transformation from camera to cell link frame
     tf_fix = [0.068,-0.260,-1.661] # [0.115,-0.260,1.661] ,0.146
+
     # user chooses color and if its available the robot picks it otherwise new color is chosen
     position_from_camera = getPose()
+    selectedColor = pose_from_camera[-1]
+
     print("POSE ", position_from_camera)
-    #transformed_position = tf_transformer.make_transformation(position_from_camera)
+
+    #calculation of the pick position from camera frame
     transformed_position2 = [position_from_camera[0]-tf_fix[0],position_from_camera[1]-tf_fix[1],-position_from_camera[2]-tf_fix[2]]
 
+    # if z value is to low, take lowest (desk level)
     if transformed_position2[2] < 1.01:
         transformed_position2[2] = 1.01
 
-    #print("Transformed_POSE ", transformed_position)
+    #publish the markers in camera frame and robot target
     print("Transformed_POSE 2", transformed_position2)
-    marker_camara_pose.publish_marker([position_from_camera[0],position_from_camera[1],-position_from_camera[2]-0.02]) # z immer etwas weniger, dass man den marker sieht
-    #marker_transformed_pose.publish_marker([transformed_position.position.x,transformed_position.position.y,1.03]) 
-    marker_transformed_pose.publish_marker([transformed_position2[0],transformed_position2[1],transformed_position2[2]]) 
-    time.sleep(5) # wichtig, das die marker geändert werden
-    
-    #pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550)) # Fixposition von Stephe
 
-    pose_from_camera = Affine((transformed_position2[0],transformed_position2[1],1.01), (0.444, 0.445, 0.550, 0.550))
-  
+    # z value lower to not place it in desk
+    marker_camara_pose.publish_marker([position_from_camera[0],position_from_camera[1],-position_from_camera[2]-0.02]) 
+    marker_transformed_pose.publish_marker([transformed_position2[0],transformed_position2[1],transformed_position2[2]]) 
+    time.sleep(5) # for debugging to see the markers changing
     
+    #pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550)) # fixed position on R5 grid
+
+    pose_from_camera = Affine((transformed_position2[0],transformed_position2[1],transformed_position2[2]), (0.444, 0.445, 0.550, 0.550))
+  
+    #start pick routine
     test_picks.pick(pose_from_camera)
 
-
+    #move to camera for evaluation
     test_picks.move_to_camera()
     
-    # ###### bildmethode check
-    color_image = ColorImage("red")
-    color_image.picSuccessful()
+    # ###### bildmethode check###########
 
+
+    color_image = ColorImage()
+    successfulPick = color_image.picSuccessful(selectedColor)
     test_picks.leave_camera()
-    # # wenn erfolgreich
-
-    test_picks.drop_at_slide()
+    #if successfull then drop brause at the slide position else drop it back in the box
+    if successfulPick:
+        test_picks.drop_at_slide() 
+    else:
+        test_picks.drop_it_back()
 
     
+        
+
     test_picks.shutdown()
     # shutdown previously initialized context
 

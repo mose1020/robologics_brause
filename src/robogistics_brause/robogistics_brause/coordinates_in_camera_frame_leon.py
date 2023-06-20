@@ -271,4 +271,4 @@ def getPose():
     pipeline, profile = depthImage.startDepthStream()
     x_cameraFrame, y_cameraFrame, z_cameraFrame = depthImage.get3DCoordinates(pipeline, profile)
 
-    return -x_cameraFrame, y_cameraFrame, z_cameraFrame
+    return -x_cameraFrame, y_cameraFrame, z_cameraFrame, selected_color
