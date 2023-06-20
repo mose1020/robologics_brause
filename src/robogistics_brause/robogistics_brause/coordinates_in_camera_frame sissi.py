@@ -398,8 +398,7 @@ def getPose():
     print("color geholt")
     image = ColorImage(selected_color,True)
     lower_value, upper_value = image.getTreshold()
-    #color_image = image.startStream()
-    color_image = cv2.imread(r'F:\Robo3\robologics_brause\src\robogistics_brause\robogistics_brause\object_detection\images\test_image.png', cv2.IMREAD_COLOR)
+    color_image = image.startStream()
     print("start stream")
         
 
