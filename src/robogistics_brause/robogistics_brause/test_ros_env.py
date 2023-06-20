@@ -224,7 +224,12 @@ def main(args=None):
 
 
     color_image = ColorImage()
-    successfulPick = color_image.picSuccessful(selectedColor)
+    #successfulPick = color_image.picSuccessful(selectedColor)
+
+    #for debugging##################
+    successfulPick = False
+    ################################
+
     test_picks.leave_camera()
     #if successfull then drop brause at the slide position else drop it back in the box
     if successfulPick:
@@ -249,6 +254,7 @@ def main(args=None):
     rclpy.shutdown()
 
 if __name__ == '__main__':
+    
     main()
 
 
