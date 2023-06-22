@@ -11,6 +11,8 @@ from scipy.interpolate import splprep, splev
 # new imports for transfer from docker to local
 import docker
 import shutil
+from ultralytics import YOLO
+import torch
 
 
 class ColorSelector:
@@ -67,13 +69,15 @@ class ColorSelector:
 
 class ColorImage:
 
-    def __init__(self, color):
+    def __init__(self, color,method):
         self.brightness_value = 60
         self.saturation_value = 70
         self.color = color
         self.folder_path = "images_realsense/" 
-        self.YOLO_PATH = "src/robogistics_brause/robogistics_brause"
-        
+        self.YOLO_IMG_PATH = "src/robogistics_brause/robogistics_brause/YOLO_image.jpg" # safe the image for YOLO here
+        self.method = method # method "YOLO"
+        self.model = YOLO(model='src/robogistics_brause/robogistics_brause/object_detection/Yolov8_model/weights/best.pt')
+
 
     def getTreshold(self):
 
@@ -114,18 +118,21 @@ class ColorImage:
         # Wait for a coherent pair of frames: depth and color
         frames = pipeline.wait_for_frames()
         color_frame = frames.get_color_frame()
-
-        # Convert images to numpy arrays
-        color_image = np.asanyarray(color_frame.get_data())
-
         # Stop streaming
         pipeline.stop()
+        # Convert images to numpy arrays
+        color_array = np.asanyarray(color_frame.get_data())
+        color_img = Image.fromarray(color_array)
+        color_img.save(self.YOLO_IMG_PATH)
 
-        return color_image
+        if self.method == "YOLO":
+            return self.YOLO_IMG_PATH
+        else:
+            return color_array
 
-    def getClassicalMask(self, color_image, lower_value, upper_value):
+    def getClassicalMask(self, color_array, lower_value, upper_value):
 
-        hsv = cv2.cvtColor(color_image, cv2.COLOR_BGR2HSV)    # convert to HSV
+        hsv = cv2.cvtColor(color_array, cv2.COLOR_BGR2HSV)    # convert to HSV
         mask = cv2.inRange(hsv, lower_value, upper_value)  # mask for color
 
         kernel = np.ones((15,15),np.uint8)  # 15x15 kernel for morphological transformation
@@ -136,9 +143,43 @@ class ColorImage:
 
         return classical_mask
     
-    def getPixelCoordinates(self, mask, color_image):
+    def getYOLOMask(self):
+        results = self.model.predict(source=self.YOLO_IMG_PATH, save=False, save_txt=False, stream=True)
+        for result in results: # only on result in results
+            
+            # get array results
+            all_masks = result.masks.data
+            boxes = result.boxes.data
+            color = boxes[:, 5] #
+            idx_masks_color = torch.where(color == 0) # index of the chosen coulour
+            # use these indices to extract the relevant masks
+            for index in idx_masks_color:
+                color_masks = all_masks[index]
+                result_masks = [[],[]]
+                for i in range(len(color_masks)):
+
+                    result_mask = color_masks[i].cpu().numpy()
+                    result_masks[0].append(np.count_nonzero(result_mask))
+                    result_masks[1].append(result_mask)
+
+        _, final_mask_list = (list(t) for t in zip(*sorted(zip(result_masks[0], result_masks[1]), reverse=True)))
+
+
+        binary_array = np.where(final_mask_list[0] != 0, 1, 0)
+        binary_array = binary_array.astype('uint8')
+        resized_binary_array = cv2.resize(binary_array,(1280, 720))
+        resized_binary_array.astype('uint8') # nicht sicher ob notwendig
+
+        return resized_binary_array
+    
+    def getPixelCoordinates(self, color_image):
+
+        if self.method == "YOLO":
+            mask = self.getYOLOMask()
+        else:
+            mask = self.getClassicalMask(color_image, self.lower_value, self.upper_value)
         
-        contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE) # find contours
+        contours,_ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE) # find contours
         biggest_contour = max(contours, key = cv2.contourArea) # find the biggest contour (c) by the area
 
         # find the center of the contour
