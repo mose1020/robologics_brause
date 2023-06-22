@@ -17,8 +17,10 @@ import geometry_msgs.msg
 from geometry_msgs.msg import Point
 import numpy as np
 
-from .coordinates_in_camera_frame_leon import getPose, ColorImage
+#from .coordinates_in_camera_frame_leon import getPose, ColorImage
 #from .coordinates_in_camera_frame import getPose
+from .coordinates_in_camera_frame_v2 import getPose
+from .coordinates_in_camera_frame_v2 import ColorImage
 
 
 class BrausePicker:
@@ -191,7 +193,8 @@ def main(args=None):
 
     # user chooses color and if its available the robot picks it otherwise new color is chosen
     position_from_camera = getPose()
-    selectedColor = pose_from_camera[-1]
+    selectedColor = position_from_camera[3]
+    method = position_from_camera[4]
 
     print("POSE ", position_from_camera)
 
@@ -223,8 +226,8 @@ def main(args=None):
     # ###### bildmethode check###########
 
 
-    color_image = ColorImage()
-    #successfulPick = color_image.picSuccessful(selectedColor)
+    color_image = ColorImage(selectedColor,method)
+    successfulPick = color_image.picSuccessful()
 
     #for debugging##################
     successfulPick = False

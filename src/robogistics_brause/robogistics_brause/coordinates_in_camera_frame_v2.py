@@ -28,25 +28,24 @@ class ColorSelector:
         self.root.title("Color Selector")
         self.root.geometry("500x680")
 
-
         # Center the window on the screen
         self.root.eval('tk::PlaceWindow %s center' % self.root.winfo_toplevel())
 
         button_width = 100
         button_height = 200
-        red_image = Image.open("object_detection/images/Himbeere.PNG")# Replace "red_image.png" with the path to your image
+        red_image = Image.open("src/robogistics_brause/robogistics_brause/object_detection/images/Himbeere.PNG")# Replace "red_image.png" with the path to your image
         red_image = red_image.resize((button_width, button_height)) 
         self.red_image = ImageTk.PhotoImage(red_image)
 
-        orange_image = Image.open("object_detection/images/Orange.PNG")# Replace "red_image.png" with the path to your image
+        orange_image = Image.open("src/robogistics_brause/robogistics_brause/object_detection/images/Orange.PNG")# Replace "red_image.png" with the path to your image
         orange_image = orange_image.resize((button_width, button_height)) 
         self.orange_image = ImageTk.PhotoImage(orange_image)
 
-        green_image = Image.open("object_detection/images/Waldmeister.PNG")# Replace "red_image.png" with the path to your image
+        green_image = Image.open("src/robogistics_brause/robogistics_brause/object_detection/images/Waldmeister.PNG")# Replace "red_image.png" with the path to your image
         green_image = green_image.resize((button_width, button_height)) 
         self.green_image = ImageTk.PhotoImage(green_image)
 
-        yellow_image = Image.open("object_detection/images/Zitrone.PNG")# Replace "red_image.png" with the path to your image
+        yellow_image = Image.open("src/robogistics_brause/robogistics_brause/object_detection/images/Zitrone.PNG")# Replace "red_image.png" with the path to your image
         yellow_image = yellow_image.resize((button_width, button_height)) 
         self.yellow_image = ImageTk.PhotoImage(yellow_image)
 
@@ -104,7 +103,7 @@ class ColorSelector:
             self.method = "YOLO"
 
     # Method to show the color selector window self.root.state('zoomed')and return the selected color
-    def get_color(self):
+    def get_color_and_method(self):
         self.color = None
         self.root.mainloop()
         return self.color, self.method
@@ -112,8 +111,10 @@ class ColorSelector:
 class ColorImage:
 
     def __init__(self, color, method):
-        self.brightness_value = 60
-        self.saturation_value = 70
+        self.brightness_value_Classic = 60
+        self.saturation_value_Classic = 70
+        self.brightness_value_YOLO = 50
+        self.saturation_value_YOLO = 50
         self.color = color
         self.folder_path = "images_realsense/" 
         self.YOLO_IMG_PATH = "src/robogistics_brause/robogistics_brause/YOLO_image.jpg" # safe the image for YOLO here
@@ -154,8 +155,14 @@ class ColorImage:
 
         # Set the brightness and saturation of the camera
         color_sensor = pipeline.get_active_profile().get_device().first_color_sensor()
-        color_sensor.set_option(rs.option.brightness, self.brightness_value)
-        color_sensor.set_option(rs.option.saturation, self.saturation_value)
+
+        if self.method == "Classic":
+            color_sensor.set_option(rs.option.brightness, self.brightness_value_Classic)
+            color_sensor.set_option(rs.option.saturation, self.saturation_value_Classic)
+
+        else:
+            color_sensor.set_option(rs.option.brightness, self.brightness_value_YOLO)
+            color_sensor.set_option(rs.option.saturation, self.saturation_value_YOLO)
 
         # Wait for a coherent pair of frames: depth and color
         frames = pipeline.wait_for_frames()
@@ -164,13 +171,16 @@ class ColorImage:
         pipeline.stop()
         # Convert images to numpy arrays
         color_array = np.asanyarray(color_frame.get_data())
-        color_img = Image.fromarray(color_array)
+        bgr_array = cv2.cvtColor(color_array, cv2.COLOR_RGB2BGR)
+        color_img = Image.fromarray(bgr_array)
         color_img.save(self.YOLO_IMG_PATH)
 
-        if self.method == "YOLO":
-            return self.YOLO_IMG_PATH
-        else:
-            return color_array
+        # if self.method == "YOLO":
+        #     return self.YOLO_IMG_PATH
+        # else:
+        #     return color_array
+
+        return color_array
 
     def getClassicalMask(self, color_array):
 
@@ -189,13 +199,25 @@ class ColorImage:
     
     def getYOLOMask(self):
         results = self.model.predict(source=self.YOLO_IMG_PATH, save=False, save_txt=False, stream=True)
+        color_index = 0
+        if self.color == "red":
+            color_index = 2
+
+        if self.color == "green":
+            color_index = 0
+
+        if self.color == "yellow":
+            color_index = 3
+
+        if self.color == "orange":
+            color_index = 1
         for result in results: # only on result in results
             
             # get array results
             all_masks = result.masks.data
             boxes = result.boxes.data
             color = boxes[:, 5] #
-            idx_masks_color = torch.where(color == 0) # index of the chosen coulour
+            idx_masks_color = torch.where(color == color_index) # index of the chosen coulour
             # use these indices to extract the relevant masks
             for index in idx_masks_color:
                 color_masks = all_masks[index]
@@ -222,6 +244,8 @@ class ColorImage:
             mask = self.getYOLOMask()
         else:
             mask = self.getClassicalMask(color_image)
+        
+        print(type(color_image))
         
         contours,_ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE) # find contours
         biggest_contour = max(contours, key = cv2.contourArea) # find the biggest contour (c) by the area
@@ -344,7 +368,7 @@ class DepthImage:
 
 def getPose():
     color_selector = ColorSelector()
-    selected_color, method = color_selector.get_color()
+    selected_color, method = color_selector.get_color_and_method()
 
     image = ColorImage(selected_color, method)
     color_image = image.startStream()
@@ -355,4 +379,4 @@ def getPose():
     pipeline, profile = depthImage.startDepthStream()
     x_cameraFrame, y_cameraFrame, z_cameraFrame = depthImage.get3DCoordinates(pipeline, profile)
 
-    return -x_cameraFrame, y_cameraFrame, z_cameraFrame, selected_color
+    return -x_cameraFrame, y_cameraFrame, z_cameraFrame, selected_color, method
