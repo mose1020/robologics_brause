@@ -271,6 +271,7 @@ class ColorImage:
         shutil.rmtree(temp_dir)
 
     def picSuccessful(self):
+
         color_image = self.startStream()
 
         os.makedirs(self.folder_path, exist_ok=True)
@@ -290,6 +291,16 @@ class ColorImage:
         # Save the plot image in the "images_realsense/" folder with the filename
         plt.savefig(os.path.join(self.folder_path, filename))
 
+        _, mask_size = self.getYOLOMask()
+
+        if mask_size > 6000:
+            return True
+        
+        else:
+            return False
+        
+
+    
 class DepthImage:
 
     def __init__(self, x_pixelkoordinate, y_pixelkoordinate):
