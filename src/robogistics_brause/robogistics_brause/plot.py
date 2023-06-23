@@ -35,11 +35,16 @@ xs, ys = zip(*polygon)
 fig, ax = plt.subplots()
 ax.plot(xs, ys, 'r-')
 ax.add_patch(Polygon(polygon, closed=True, alpha=0.2))
+ax.annotate('Valid pick area', xy=(-0.1, 0.3), xytext=(0.05, 0.4),
+            arrowprops=dict(facecolor='black', arrowstyle='->'))
 
-#place a huge circle at 0.0, 0.4 and name it Robot
-ax.add_patch(plt.Circle((0.0, 0.4), 0.05, color='grey', alpha=0.2))
-ax.annotate('Robot', xy=(0.0, 0.4), xytext=(0.0+0.05, 0.4+0.05),
-                arrowprops=dict(facecolor='black', arrowstyle='->'))
+#place a huge circle at -0.2, 0.1 and name it Robot
+ax.add_patch(plt.Circle((-0.2, 0.1), 0.05, color='grey', alpha=0.2))
+ax.annotate('Robot', xy=(-0.2, 0.1), xytext=(-0.2, 0.1))
+
+#add a grey robot arm rectangle
+ax.add_patch(plt.Rectangle((-0.2, 0.075), 0.2, 0.05, color='grey', alpha=0.2))
+
 
 #add lines along x values -0.2 and -0.05
 ax.plot([-0.2, -0.2], [-0.2, 0.4], 'k-')
