@@ -262,13 +262,12 @@ def main(args=None):
         
         # ###### bildmethode check###########
 
+    color_image = ColorImage(selectedColor, "YOLO")
+    successfulPick = color_image.picSuccessful()
 
-        color_image = ColorImage(selectedColor,method)
-        successfulPick = color_image.picSuccessful()
-
-        #for debugging##################
-        successfulPick = True
-        ################################
+    #for debugging##################
+    #successfulPick = False
+    ################################
 
         test_picks.leave_camera()
         #if successfull then drop brause at the slide position else drop it back in the box
