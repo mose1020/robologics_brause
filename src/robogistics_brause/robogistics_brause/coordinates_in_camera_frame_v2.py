@@ -1,38 +1,45 @@
 import cv2
+import torch
 import matplotlib.pyplot as plt
 import numpy as np 
 import os
 import pyrealsense2 as rs
 import tkinter as tk
+from tkinter import font
+import tkinter.ttk as ttk
 
 from PIL import ImageTk
-
 from PIL import Image
 from scipy.interpolate import splprep, splev
+from ultralytics import YOLO
 
 # new imports for transfer from docker to local
 import docker
 import shutil
-from ultralytics import YOLO
-import torch
-
 
 class ColorSelector:
     
-    def __init__(self):
+    def __init__(self, color_available):
         # Create the main window
+        self.color_available = color_available
         self.root = tk.Tk()
         self.method = "Classic"
 
         # Set the window title and size
         self.root.title("Color Selector")
-        self.root.geometry("500x680")
+
+        if color_available:
+            self.root.geometry("550x780")
+        else:
+            self.root.geometry("550x820")
 
         # Center the window on the screen
         self.root.eval('tk::PlaceWindow %s center' % self.root.winfo_toplevel())
+        self.root.resizable(False, False)
 
-        button_width = 100
-        button_height = 200
+        button_width = 250
+        button_height = 320
+
         red_image = Image.open("src/robogistics_brause/robogistics_brause/object_detection/images/Himbeere.PNG")# Replace "red_image.png" with the path to your image
         red_image = red_image.resize((button_width, button_height)) 
         self.red_image = ImageTk.PhotoImage(red_image)
@@ -58,8 +65,8 @@ class ColorSelector:
         # Create the checkboxes
         self.checkboxClassic_var = tk.BooleanVar(value=True)
         self.checkboxYOLO_var = tk.BooleanVar(value=False)
-        self.checkboxClassic = tk.Checkbutton(self.root, text="Klassisch", variable=self.checkboxClassic_var, command=self.check_classic)
-        self.checkboxYOLO = tk.Checkbutton(self.root, text="YOLOV8", variable=self.checkboxYOLO_var, command=self.check_yolo)
+        self.checkboxClassic = tk.Checkbutton(self.root, text="Klassisch", variable=self.checkboxClassic_var, command=self.check_classic, bg="white",font=("Arial", 20),highlightthickness=0)
+        self.checkboxYOLO = tk.Checkbutton(self.root, text="YOLOV8", variable=self.checkboxYOLO_var, command=self.check_yolo, bg="white",font=("Arial", 20),highlightthickness=0)
 
         # Pack the buttons into the window using the grid layout manager
         self.red_button.grid(row=0, column=0, padx=10, pady=10)
@@ -68,9 +75,14 @@ class ColorSelector:
         self.yellow_button.grid(row=1, column=1, padx=10, pady=10)
 
         # Pack the Checkboxes into the window using the grid layout manager
-        self.checkboxClassic.grid(row=2, column=0, padx=10, pady=10)
-        self.checkboxYOLO.grid(row=2, column=1, padx=10, pady=10)
+        self.checkboxClassic.grid(row=2, column=0, padx=10, pady=20)
+        self.checkboxYOLO.grid(row=2, column=1, padx=10, pady=20)
 
+       # Check if the text should be displayed initially
+        if not self.color_available:
+            self.show_text()
+
+        self.root.configure(bg="white")
     # Method to select the "red" color
     def select_red(self):
         self.root.destroy()
@@ -107,6 +119,11 @@ class ColorSelector:
         self.color = None
         self.root.mainloop()
         return self.color, self.method
+    
+    # Method to show the text
+    def show_text(self):
+        self.text_label = tk.Label(self.root, text="Farbe nicht vorhanden. Bitte wählen Sie erneut aus.", font=font.Font(weight="bold"), bg="white", fg="red")
+        self.text_label.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
 
 class ColorImage:
 
@@ -120,10 +137,9 @@ class ColorImage:
         self.YOLO_IMG_PATH = "src/robogistics_brause/robogistics_brause/YOLO_image.jpg" # safe the image for YOLO here
         self.method = method # method "YOLO"
         self.model = YOLO(model='src/robogistics_brause/robogistics_brause/object_detection/Yolov8_model/weights/best.pt')
-
+        self.mask_threshold = 6000  #if mask_threshold > 6000 pixel, pick was successful
 
     def getTreshold(self):
-
         # define the lower and upper boundaries of the colors in the HSV color space
         if self.color=="red":
             lower_value = np.array([149, 84, 57], dtype = "uint8") 
@@ -144,11 +160,13 @@ class ColorImage:
         return lower_value, upper_value
     
     def startStream(self):
-        
         # Configure color streams
         pipeline = rs.pipeline()
         config = rs.config()
         config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
+        config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
+
+        align = rs.align(rs.stream.color)
 
         # Start streaming
         pipeline.start(config)
@@ -159,26 +177,24 @@ class ColorImage:
         if self.method == "Classic":
             color_sensor.set_option(rs.option.brightness, self.brightness_value_Classic)
             color_sensor.set_option(rs.option.saturation, self.saturation_value_Classic)
-
         else:
             color_sensor.set_option(rs.option.brightness, self.brightness_value_YOLO)
             color_sensor.set_option(rs.option.saturation, self.saturation_value_YOLO)
 
         # Wait for a coherent pair of frames: depth and color
         frames = pipeline.wait_for_frames()
-        color_frame = frames.get_color_frame()
+        
+        aligned_frames = align.process(frames)
+        color_frame = aligned_frames.get_color_frame()
+
         # Stop streaming
         pipeline.stop()
+
         # Convert images to numpy arrays
         color_array = np.asanyarray(color_frame.get_data())
         bgr_array = cv2.cvtColor(color_array, cv2.COLOR_RGB2BGR)
         color_img = Image.fromarray(bgr_array)
         color_img.save(self.YOLO_IMG_PATH)
-
-        # if self.method == "YOLO":
-        #     return self.YOLO_IMG_PATH
-        # else:
-        #     return color_array
 
         return color_array
 
@@ -245,9 +261,14 @@ class ColorImage:
             mask, _ = self.getYOLOMask()
         else:
             mask = self.getClassicalMask(color_image)
-        
-        print(type(color_image))
-        
+
+        mask_size = np.count_nonzero(mask)
+
+        if mask_size == 0:
+            x_pixelkoordinate = 0
+            y_pixelkoordinate = 0
+            return x_pixelkoordinate, y_pixelkoordinate
+
         contours,_ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE) # find contours
         biggest_contour = max(contours, key = cv2.contourArea) # find the biggest contour (c) by the area
 
@@ -318,14 +339,12 @@ class ColorImage:
 
         _, mask_size = self.getYOLOMask()
 
-        if mask_size > 6000:
+        if mask_size > self.mask_threshold:
             return True
         
         else:
             return False
         
-
-    
 class DepthImage:
 
     def __init__(self, x_pixelkoordinate, y_pixelkoordinate):
@@ -337,21 +356,24 @@ class DepthImage:
         pipeline = rs.pipeline()
         config = rs.config()
         config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
+        config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
+        align = rs.align(rs.stream.color)
         profile = pipeline.start(config)
 
-        return pipeline, profile
+        return pipeline, profile, align
         
-    def get3DCoordinates(self, pipeline, profile):
+    def get3DCoordinates(self, pipeline, profile, align):
         depth_sensor = profile.get_device().first_depth_sensor()
-        depth_scale = depth_sensor.get_depth_scale()
+
+        frames = pipeline.wait_for_frames()
+        aligned_frames = align.process(frames)
+        depth_frame = aligned_frames.get_depth_frame()
+
         intrinsics = profile.get_stream(rs.stream.depth).as_video_stream_profile().get_intrinsics()
 
         # Define the range of pixels to consider around the desired pixel
         pixel_range = 3
 
-        # Read a depth frame and get a pixel coordinate
-        frames = pipeline.wait_for_frames()
-        depth_frame = frames.get_depth_frame()
         depth_image = np.asanyarray(depth_frame.get_data())
 
         pixel = (self.x_pixelkoordinate, self.y_pixelkoordinate)  # example pixel coordinate
@@ -378,8 +400,8 @@ class DepthImage:
 
         return x_cameraFrame, y_cameraFrame, z_cameraFrame
 
-def getPose():
-    color_selector = ColorSelector()
+def getPose(color_available):
+    color_selector = ColorSelector(color_available)
     selected_color, method = color_selector.get_color_and_method()
 
     image = ColorImage(selected_color, method)
@@ -387,8 +409,11 @@ def getPose():
 
     x_pixelkoordinate, y_pixelkoordinate = image.getPixelCoordinates(color_image)
 
+    if x_pixelkoordinate == 0 and y_pixelkoordinate == 0:
+        getPose(False)
+
     depthImage = DepthImage(x_pixelkoordinate, y_pixelkoordinate)
-    pipeline, profile = depthImage.startDepthStream()
-    x_cameraFrame, y_cameraFrame, z_cameraFrame = depthImage.get3DCoordinates(pipeline, profile)
+    pipeline, profile, align = depthImage.startDepthStream()
+    x_cameraFrame, y_cameraFrame, z_cameraFrame = depthImage.get3DCoordinates(pipeline, profile, align)
 
     return -x_cameraFrame, y_cameraFrame, z_cameraFrame, selected_color, method
