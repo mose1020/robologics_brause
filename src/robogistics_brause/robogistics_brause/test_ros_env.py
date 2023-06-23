@@ -226,7 +226,7 @@ def main(args=None):
     tf_fix = [0.068,-0.260,-1.661] # [0.115,-0.260,1.661] ,0.146
 
     # user chooses color and if its available the robot picks it otherwise new color is chosen
-    position_from_camera = getPose()
+    position_from_camera = getPose(True)
     selectedColor = position_from_camera[3]
     method = position_from_camera[4]
     print("POSE from camera", position_from_camera)
