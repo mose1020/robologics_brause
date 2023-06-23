@@ -21,7 +21,7 @@ def is_coordinate_inside_polygon(x, y):
     return inside
 
 # Define the coordinates to check
-x = 0.1
+x = 0.0
 y = 0.2
 
 # Check if the coordinate is inside the polygon
@@ -35,6 +35,13 @@ xs, ys = zip(*polygon)
 fig, ax = plt.subplots()
 ax.plot(xs, ys, 'r-')
 ax.add_patch(Polygon(polygon, closed=True, alpha=0.2))
+
+#place a huge circle at 0.0, 0.4 and name it Robot
+ax.add_patch(plt.Circle((0.0, 0.4), 0.05, color='grey', alpha=0.2))
+ax.annotate('Robot', xy=(0.0, 0.4), xytext=(0.0+0.05, 0.4+0.05),
+                arrowprops=dict(facecolor='black', arrowstyle='->'))
+
+
 
 if result:
     ax.plot(x, y, 'bo')
@@ -51,4 +58,5 @@ ax.set_aspect('equal')
 plt.xlabel('X')
 plt.ylabel('Y')
 plt.title('Point Inside Polygon')
-plt.show()
+#plt.show()
+plt.savefig('validate_position.jpg')
