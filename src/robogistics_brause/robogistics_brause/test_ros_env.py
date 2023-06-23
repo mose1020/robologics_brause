@@ -223,11 +223,11 @@ def main(args=None):
     # ###### bildmethode check###########
 
 
-    color_image = ColorImage()
-    #successfulPick = color_image.picSuccessful(selectedColor)
+    color_image = ColorImage(selectedColor, "YOLO")
+    successfulPick = color_image.picSuccessful()
 
     #for debugging##################
-    successfulPick = False
+    #successfulPick = False
     ################################
 
     test_picks.leave_camera()
