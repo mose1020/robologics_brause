@@ -189,3 +189,11 @@ Check in camera
 Get the coordinates of the current tcp
 ros2 run tf2_ros tf2_echo 'cell_link' 'tcp_link'
    
+
+   0.068, 0.341
+
+  -0.324, 0.341,
+
+  -0.281, 0.172,
+
+   0.114, 0.124,
