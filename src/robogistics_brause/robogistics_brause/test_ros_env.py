@@ -88,7 +88,37 @@ class BrausePicker:
         self.robot.lin(pre_pick) 
         self.robot.home()
 
-    def validate_pick_pose()
+    
+    def validate_pick_pose(self, pick_pose: Affine) -> bool:
+        """This function checks if the pick pose is inside the polygon of the slide
+
+        Args:
+            pick_pose (_type_): x and y coordinates of the pick pose
+            pick_pose (_type_): 
+
+        Returns:
+            bool: True if the pick pose is inside the polygon, False if not
+        """    
+        #Values by experimental testing    
+        polygon = [(0.068, 0.341), (-0.324, 0.341), (-0.281, 0.172), (0.114, 0.124)]
+        n = len(polygon)
+        inside = False
+        x = pick_pose[0]
+        y = pick_pose[1]
+        p1x, p1y = polygon[0]
+        for i in range(n + 1):
+            p2x, p2y = polygon[i % n]
+            if y > min(p1y, p2y):
+                if y <= max(p1y, p2y):
+                    if x <= max(p1x, p2x):
+                        if p1y != p2y:
+                            xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                        if p1x == p2x or x <= xinters:
+                            inside = not inside
+            p1x, p1y = p2x, p2y
+
+        return inside
+    
 
     def move_to_camera(self) -> None:
         self.robot.home()
@@ -215,40 +245,46 @@ def main(args=None):
     # z value lower to not place it in desk
     marker_camara_pose.publish_marker([position_from_camera[0],position_from_camera[1],-position_from_camera[2]-0.02]) 
     marker_transformed_pose.publish_marker([transformed_position2[0],transformed_position2[1],transformed_position2[2]]) 
-    time.sleep(5) # for debugging to see the markers changing
+    time.sleep(3) # for debugging to see the markers changing
     
     #pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550)) # fixed position on R5 grid
 
     pose_from_camera = Affine((transformed_position2[0],transformed_position2[1],transformed_position2[2]), (0.444, 0.445, 0.550, 0.550))
-  
-    #start pick routine and open vacuum gripper before
-    test_picks.shut_off_vacuum()
-    test_picks.pick(pose_from_camera)
+    pose_is_valid = test_picks.validate_pick_pose(pose_from_camera)
+    #start of movement-------------------------------------------------------
+    if pose_is_valid:
+        #start pick routine and open vacuum gripper before
+        test_picks.shut_off_vacuum()
+        test_picks.pick(pose_from_camera)
 
-    #move to camera for evaluation
-    test_picks.move_to_camera()
-    
-    # ###### bildmethode check###########
-
-
-    color_image = ColorImage(selectedColor,method)
-    successfulPick = color_image.picSuccessful()
-
-    #for debugging##################
-    successfulPick = True
-    ################################
-
-    test_picks.leave_camera()
-    #if successfull then drop brause at the slide position else drop it back in the box
-    if successfulPick:
-        test_picks.drop_at_slide() 
-    else:
-        test_picks.drop_it_back()
-
-    
+        #move to camera for evaluation
+        test_picks.move_to_camera()
         
+        # ###### bildmethode check###########
 
-    test_picks.shutdown()
+
+        color_image = ColorImage(selectedColor,method)
+        successfulPick = color_image.picSuccessful()
+
+        #for debugging##################
+        successfulPick = True
+        ################################
+
+        test_picks.leave_camera()
+        #if successfull then drop brause at the slide position else drop it back in the box
+        if successfulPick:
+            test_picks.drop_at_slide() 
+        else:
+            test_picks.drop_it_back()
+
+        
+            
+
+        test_picks.shutdown()
+    else:
+        print("Pose is not valid")
+        print("Pose: ", pose_from_camera)
+        print("Please move the Brause to a more center position or try another color")
     # shutdown previously initialized context
 
 
