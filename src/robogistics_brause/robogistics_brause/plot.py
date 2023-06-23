@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 
 def is_coordinate_inside_polygon(x, y):
+    """Check if a coordinate (x, y) is inside a polygon.
+    """
     polygon = [(0.068, 0.341), (-0.324, 0.341), (-0.281, 0.172), (0.114, 0.124)]
     n = len(polygon)
     inside = False
