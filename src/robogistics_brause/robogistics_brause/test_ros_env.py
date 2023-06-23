@@ -258,12 +258,12 @@ def main(args=None):
 
           # ###### bildmethode check###########
 
-    color_image = ColorImage(selectedColor, "YOLO")
-    successfulPick = color_image.picSuccessful()
-
-    #for debugging##################
-    #successfulPick = False
-    ################################
+        color_image = ColorImage(selectedColor, "YOLO")
+        successfulPick = color_image.picSuccessful()
+    
+        #for debugging##################
+        #successfulPick = False
+        ################################
 
 
         #move to home away from camera
