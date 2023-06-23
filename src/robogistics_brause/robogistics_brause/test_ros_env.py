@@ -87,7 +87,6 @@ class BrausePicker:
         #maybe a wait is needed here if the brause is not attaching correctly
         self.robot.lin(pre_pick) 
         self.robot.home()
-
     
     def validate_pick_pose(self, pick_pose: Affine) -> bool:
         """This function checks if the pick pose is inside the polygon of the slide
@@ -120,7 +119,6 @@ class BrausePicker:
 
         return inside
     
-
     def move_to_camera(self) -> None:
         self.robot.home()
         #move to camera position via home to avoid collision and entanglement
@@ -152,7 +150,6 @@ class BrausePicker:
         self.robot.open_vacuum_gripper()
         time.sleep(2.0)
         self.robot.home()
-
 
     def home(self) -> None:
         """ Move the robot to its home pose.
@@ -215,7 +212,6 @@ class MarkerPublisherCam(Node): # Wenn der Marker verschwindet --> vielleicht is
 
 
 def main(args=None):
-
     # initialize ros communications and classes
     rclpy.init(args=args)
     marker_camara_pose = MarkerPublisherCam()
