@@ -103,8 +103,9 @@ class BrausePicker:
         polygon = [(0.068, 0.341), (-0.324, 0.341), (-0.281, 0.172), (0.114, 0.124)]
         n = len(polygon)
         inside = False
-        x = pick_pose[0]
-        y = pick_pose[1]
+        #get x and y coordinates of Affine pick_pose
+        x = pick_pose.translation[0]
+        y = pick_pose.translation[1]
         p1x, p1y = polygon[0]
         for i in range(n + 1):
             p2x, p2y = polygon[i % n]
@@ -215,9 +216,8 @@ class MarkerPublisherCam(Node): # Wenn der Marker verschwindet --> vielleicht is
 
 def main(args=None):
 
-    # initialize ros communications for a given context
+    # initialize ros communications and classes
     rclpy.init(args=args)
-
     marker_camara_pose = MarkerPublisherCam()
     marker_transformed_pose = MarkerPublisher()
     test_picks = BrausePicker(is_simulation=False)
@@ -229,29 +229,28 @@ def main(args=None):
     position_from_camera = getPose()
     selectedColor = position_from_camera[3]
     method = position_from_camera[4]
-
-    print("POSE ", position_from_camera)
+    print("POSE from camera", position_from_camera)
 
     #calculation of the pick position from camera frame
     transformed_position2 = [position_from_camera[0]-tf_fix[0],position_from_camera[1]-tf_fix[1],-position_from_camera[2]-tf_fix[2]]
 
-    # if z value is to low, take lowest (desk level)
+    # if z value is to low, take fixed height (desk level)
     if transformed_position2[2] < 1.01:
         transformed_position2[2] = 1.01
+        print("Z value to low, take fixed height")
 
     #publish the markers in camera frame and robot target
     print("Transformed_POSE 2", transformed_position2)
-
-    # z value lower to not place it in desk
     marker_camara_pose.publish_marker([position_from_camera[0],position_from_camera[1],-position_from_camera[2]-0.02]) 
     marker_transformed_pose.publish_marker([transformed_position2[0],transformed_position2[1],transformed_position2[2]]) 
-    time.sleep(3) # for debugging to see the markers changing
+     # for debugging to see the markers changing
+    time.sleep(3)
     
-    #pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550)) # fixed position on R5 grid
-
+    #convert translation and rotation to pose
     pose_from_camera = Affine((transformed_position2[0],transformed_position2[1],transformed_position2[2]), (0.444, 0.445, 0.550, 0.550))
     pose_is_valid = test_picks.validate_pick_pose(pose_from_camera)
-    #start of movement-------------------------------------------------------
+
+    #------------------------------------------start of movement-------------------------------------------------------
     if pose_is_valid:
         #start pick routine and open vacuum gripper before
         test_picks.shut_off_vacuum()
@@ -260,9 +259,7 @@ def main(args=None):
         #move to camera for evaluation
         test_picks.move_to_camera()
         
-        # ###### bildmethode check###########
-
-
+        #take picture and evaluate
         color_image = ColorImage(selectedColor,method)
         successfulPick = color_image.picSuccessful()
 
@@ -270,30 +267,18 @@ def main(args=None):
         successfulPick = True
         ################################
 
+        #move to home away from camera
         test_picks.leave_camera()
         #if successfull then drop brause at the slide position else drop it back in the box
         if successfulPick:
             test_picks.drop_at_slide() 
         else:
             test_picks.drop_it_back()
-
-        
-            
-
         test_picks.shutdown()
     else:
         print("Pose is not valid")
         print("Pose: ", pose_from_camera)
         print("Please move the Brause to a more center position or try another color")
-    # shutdown previously initialized context
-
-
-    #   translation:
-    # x: -0.06800000000034354
-    # y: -0.26
-    # z: 1.6609999999999858
-
-
 
     rclpy.shutdown()
 
