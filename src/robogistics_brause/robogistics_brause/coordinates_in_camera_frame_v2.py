@@ -230,18 +230,19 @@ class ColorImage:
 
         _, final_mask_list = (list(t) for t in zip(*sorted(zip(result_masks[0], result_masks[1]), reverse=True)))
 
+        mask_size = np.count_nonzero(final_mask_list[0])
 
         binary_array = np.where(final_mask_list[0] != 0, 1, 0)
         binary_array = binary_array.astype('uint8')
         resized_binary_array = cv2.resize(binary_array,(1280, 720))
         resized_binary_array.astype('uint8') # nicht sicher ob notwendig
 
-        return resized_binary_array
+        return resized_binary_array, mask_size
     
     def getPixelCoordinates(self, color_image):
 
         if self.method == "YOLO":
-            mask = self.getYOLOMask()
+            mask, _ = self.getYOLOMask()
         else:
             mask = self.getClassicalMask(color_image)
         
