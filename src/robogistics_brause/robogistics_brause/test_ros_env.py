@@ -17,10 +17,9 @@ import geometry_msgs.msg
 from geometry_msgs.msg import Point
 import numpy as np
 
-#from .coordinates_in_camera_frame_leon import getPose, ColorImage
-#from .coordinates_in_camera_frame import getPose
-from .coordinates_in_camera_frame_v2 import getPose
-from .coordinates_in_camera_frame_v2 import ColorImage
+
+from .coordinates_in_camera_frame_v2 import getPose,ColorImage
+
 
 
 class BrausePicker:
@@ -163,6 +162,35 @@ class BrausePicker:
         """
         self.robot.destroy_node()
 
+    def adjust_orientation(self, pick_pose: Affine) -> Affine:
+        """ Adjust the orientation of the pick pose to an easier pick for the 
+        robot. The orientation is shifted in different x Area ranges.
+
+        Parameters
+        ----------
+        pick_pose : Affine
+            The pick pose.
+
+        Returns
+        -------
+        Affine
+            The adjusted pick pose.
+
+        """
+        translation = pick_pose.translation
+        x_value = pick_pose.translation[0]
+        #switch case for different x value ranges
+        if x_value < -0.2:
+            rotation = (0.707, 0.0, 0.0, 0.707)
+        elif x_value < -0.05:
+            rotation = (0.0, 0.0, 0.0, 1.0)
+        else:
+            rotation = (0.707, 0.0, 0.0, 0.707)
+        
+        adjusted_pose = Affine(translation, rotation)
+
+        return adjusted_pose
+    
 class MarkerPublisher(Node): # Wenn der Marker verschwindet --> vielleicht is der dann in der Roboterbox (wenn tiefbild zu ungenau)
                                                             # --> scale.z von marker in dem fall erhöhen
     def __init__(self):
@@ -248,6 +276,9 @@ def main(args=None):
 
     #------------------------------------------start of movement-------------------------------------------------------
     if pose_is_valid:
+        #adjust the orientation of the gripper
+        pose_from_camera = test_picks.adjust_orientation(pose_from_camera)
+
         #start pick routine and open vacuum gripper before
         test_picks.shut_off_vacuum()
         test_picks.pick(pose_from_camera)
@@ -255,16 +286,9 @@ def main(args=None):
         #move to camera for evaluation
         test_picks.move_to_camera()
         
-
-          # ###### bildmethode check###########
-
+        #take picture and evaluate if pick was successfull
         color_image = ColorImage(selectedColor, "YOLO")
         successfulPick = color_image.picSuccessful()
-    
-        #for debugging##################
-        #successfulPick = False
-        ################################
-
 
         #move to home away from camera
         test_picks.leave_camera()

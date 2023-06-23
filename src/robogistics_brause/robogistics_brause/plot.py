@@ -41,6 +41,9 @@ ax.add_patch(plt.Circle((0.0, 0.4), 0.05, color='grey', alpha=0.2))
 ax.annotate('Robot', xy=(0.0, 0.4), xytext=(0.0+0.05, 0.4+0.05),
                 arrowprops=dict(facecolor='black', arrowstyle='->'))
 
+#add lines along x values -0.2 and -0.05
+ax.plot([-0.2, -0.2], [-0.2, 0.4], 'k-')
+ax.plot([-0.05, -0.05], [-0.2, 0.4], 'k-')
 
 
 if result:
@@ -57,6 +60,6 @@ ax.set_ylim(min(ys) - 0.1, max(ys) + 0.1)
 ax.set_aspect('equal')
 plt.xlabel('X')
 plt.ylabel('Y')
-plt.title('Point Inside Polygon')
+plt.title('Pick Point Map')
 #plt.show()
-plt.savefig('validate_position.jpg')
+plt.savefig('src/robogistics_brause/robogistics_brause/validate_position.jpg')
