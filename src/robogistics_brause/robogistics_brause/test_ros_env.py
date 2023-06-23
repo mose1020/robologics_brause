@@ -15,9 +15,12 @@ import tf2_ros
 import tf2_geometry_msgs
 import geometry_msgs.msg
 from geometry_msgs.msg import Point
+import numpy as np
 
-from .coordinates_in_camera_frame_leon import getPose, ColorImage
+#from .coordinates_in_camera_frame_leon import getPose, ColorImage
 #from .coordinates_in_camera_frame import getPose
+from .coordinates_in_camera_frame_v2 import getPose
+from .coordinates_in_camera_frame_v2 import ColorImage
 
 
 class BrausePicker:
@@ -40,7 +43,7 @@ class BrausePicker:
         self.robot = RobotClient(is_simulation=is_simulation)
         self.robot.home_pose=home_pose
     
-    def get_pre_pose(self, pose: Affine, distance: float = 0.1) -> Affine:
+    def get_pre_pose(self, pose: Affine, distance: float = 0.15) -> Affine:
         """ Calculate the pre-pick and pre-place pose with the given distance 
         to the given pose.
 
@@ -60,7 +63,7 @@ class BrausePicker:
         #pre_pose_transform = Affine(translation=(0, 0, -distance))
         #pre_pose = pose * pre_pose_transform
         
-        # prepose is 10cm above the pick pose
+        # prepose is 15cm above the pick pose
         pre_pose = Affine((pose.translation[0], pose.translation[1], pose.translation[2] + distance), pose.quat)
 
         return pre_pose
@@ -77,13 +80,46 @@ class BrausePicker:
 
         """
         self.robot.home()
-        pre_pick = self.get_pre_pose(pick_pose, distance=0.1)
+        pre_pick = self.get_pre_pose(pick_pose, distance=0.15)
         self.robot.ptp(pre_pick)
         self.robot.close_vacuum_gripper()
         self.robot.lin(pick_pose)
-        #maybe a wait is needed here
+        #maybe a wait is needed here if the brause is not attaching correctly
         self.robot.lin(pre_pick) 
         self.robot.home()
+
+    
+    def validate_pick_pose(self, pick_pose: Affine) -> bool:
+        """This function checks if the pick pose is inside the polygon of the slide
+
+        Args:
+            pick_pose (_type_): x and y coordinates of the pick pose
+            pick_pose (_type_): 
+
+        Returns:
+            bool: True if the pick pose is inside the polygon, False if not
+        """    
+        #Values by experimental testing    
+        polygon = [(0.068, 0.341), (-0.324, 0.341), (-0.281, 0.172), (0.114, 0.124)]
+        n = len(polygon)
+        inside = False
+        #get x and y coordinates of Affine pick_pose
+        x = pick_pose.translation[0]
+        y = pick_pose.translation[1]
+        p1x, p1y = polygon[0]
+        for i in range(n + 1):
+            p2x, p2y = polygon[i % n]
+            if y > min(p1y, p2y):
+                if y <= max(p1y, p2y):
+                    if x <= max(p1x, p2x):
+                        if p1y != p2y:
+                            xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                        if p1x == p2x or x <= xinters:
+                            inside = not inside
+            p1x, p1y = p2x, p2y
+
+        return inside
+    
 
     def move_to_camera(self) -> None:
         self.robot.home()
@@ -97,6 +133,8 @@ class BrausePicker:
         self.robot.ptp(Affine((0.051, 0.182, 1.319), (0.732, 0.451, 0.434, 0.268)))
         self.robot.home()
 
+    def shut_off_vacuum(self) -> None:
+        self.robot.open_vacuum_gripper()
 
     def drop_at_slide(self) -> None:
         #drop position
@@ -105,6 +143,16 @@ class BrausePicker:
         self.robot.open_vacuum_gripper()
         time.sleep(2.0)
         self.robot.home()
+
+    def drop_it_back(self) -> None:
+        #move to home
+        self.robot.home()
+        #drop it in the middle of the box under the camera
+        self.robot.ptp(Affine((-0.1, 0.26, 1.2), (0.444, 0.445, 0.550, 0.550)))
+        self.robot.open_vacuum_gripper()
+        time.sleep(2.0)
+        self.robot.home()
+
 
     def home(self) -> None:
         """ Move the robot to its home pose.
@@ -164,108 +212,78 @@ class MarkerPublisherCam(Node): # Wenn der Marker verschwindet --> vielleicht is
         self.publisher_.publish(marker_msg)
         self.get_logger().info('Marker published')
 
-class TfSubscriber(Node):
-    def __init__(self):
-        super().__init__('tf_subscriber')
-        self.subscriber = self.create_subscription(TransformStamped, 'tf_topic/TransformStamped', self.listener_callback, 10)
-        self.msg_queue = queue.Queue()
-
-    def listener_callback(self, msg):
-        self.msg_queue.put(msg)
-
-class TfTransformer:
-
-    def __init__(self,tf_subscriber):
-        
-        self.tf_subscriber = tf_subscriber
-
-    def get_transformation(self):
-
-        while self.tf_subscriber.msg_queue.empty():
-            rclpy.spin_once(self.tf_subscriber)
-            time.sleep(0.01)  # Optional delay to avoid busy waiting
-        # Retrieve the message from the queue
-        msg = self.tf_subscriber.msg_queue.get()
-
-        return msg
-
-    def make_transformation(self, source_pose):
-
-        transform = self.get_transformation()
-
-        # Create a PoseStamped message in the source frame
-        source_pose_ = geometry_msgs.msg.Pose()
-        source_pose_.position.x = source_pose[0]
-        source_pose_.position.y = source_pose[1]
-        source_pose_.position.z = source_pose[2]
-
-        transformed_pose = tf2_geometry_msgs.do_transform_pose(source_pose_, transform)
- 
-        return transformed_pose
 
 
 def main(args=None):
 
-    # initialize ros communications for a given context
+    # initialize ros communications and classes
     rclpy.init(args=args)
-
     marker_camara_pose = MarkerPublisherCam()
     marker_transformed_pose = MarkerPublisher()
     test_picks = BrausePicker(is_simulation=False)
-    #tf_subscriber = TfSubscriber()
-    #tf_transformer = TfTransformer(tf_subscriber)
-
+    
+    # values for current transformation from camera to cell link frame
     tf_fix = [0.068,-0.260,-1.661] # [0.115,-0.260,1.661] ,0.146
+
     # user chooses color and if its available the robot picks it otherwise new color is chosen
     position_from_camera = getPose()
-    print("POSE ", position_from_camera)
-    #transformed_position = tf_transformer.make_transformation(position_from_camera)
+    selectedColor = position_from_camera[3]
+    method = position_from_camera[4]
+    print("POSE from camera", position_from_camera)
+
+    #calculation of the pick position from camera frame
     transformed_position2 = [position_from_camera[0]-tf_fix[0],position_from_camera[1]-tf_fix[1],-position_from_camera[2]-tf_fix[2]]
 
+    # if z value is to low, take fixed height (desk level)
     if transformed_position2[2] < 1.01:
         transformed_position2[2] = 1.01
+        print("Z value to low, take fixed height")
 
-    #print("Transformed_POSE ", transformed_position)
+    #publish the markers in camera frame and robot target
     print("Transformed_POSE 2", transformed_position2)
-    marker_camara_pose.publish_marker([position_from_camera[0],position_from_camera[1],-position_from_camera[2]-0.02]) # z immer etwas weniger, dass man den marker sieht
-    #marker_transformed_pose.publish_marker([transformed_position.position.x,transformed_position.position.y,1.03]) 
+    marker_camara_pose.publish_marker([position_from_camera[0],position_from_camera[1],-position_from_camera[2]-0.02]) 
     marker_transformed_pose.publish_marker([transformed_position2[0],transformed_position2[1],transformed_position2[2]]) 
-    time.sleep(5) # wichtig, das die marker geändert werden
+     # for debugging to see the markers changing
+    time.sleep(3)
     
-    #pose_from_camera = Affine((-0.070, 0.327, 1.03), (0.444, 0.445, 0.550, 0.550)) # Fixposition von Stephe
+    #convert translation and rotation to pose
+    pose_from_camera = Affine((transformed_position2[0],transformed_position2[1],transformed_position2[2]), (0.444, 0.445, 0.550, 0.550))
+    pose_is_valid = test_picks.validate_pick_pose(pose_from_camera)
 
-    pose_from_camera = Affine((transformed_position2[0],transformed_position2[1],1.01), (0.444, 0.445, 0.550, 0.550))
-  
-    
-    test_picks.pick(pose_from_camera)
+    #------------------------------------------start of movement-------------------------------------------------------
+    if pose_is_valid:
+        #start pick routine and open vacuum gripper before
+        test_picks.shut_off_vacuum()
+        test_picks.pick(pose_from_camera)
 
+        #move to camera for evaluation
+        test_picks.move_to_camera()
+        
+        #take picture and evaluate
+        color_image = ColorImage(selectedColor,method)
+        successfulPick = color_image.picSuccessful()
 
-    test_picks.move_to_camera()
-    
-    # ###### bildmethode check
-    color_image = ColorImage("red")
-    color_image.picSuccessful()
+        #for debugging##################
+        successfulPick = True
+        ################################
 
-    test_picks.leave_camera()
-    # # wenn erfolgreich
-
-    test_picks.drop_at_slide()
-
-    
-    test_picks.shutdown()
-    # shutdown previously initialized context
-
-
-    #   translation:
-    # x: -0.06800000000034354
-    # y: -0.26
-    # z: 1.6609999999999858
-
-
+        #move to home away from camera
+        test_picks.leave_camera()
+        #if successfull then drop brause at the slide position else drop it back in the box
+        if successfulPick:
+            test_picks.drop_at_slide() 
+        else:
+            test_picks.drop_it_back()
+        test_picks.shutdown()
+    else:
+        print("Pose is not valid")
+        print("Pose: ", pose_from_camera)
+        print("Please move the Brause to a more center position or try another color")
 
     rclpy.shutdown()
 
 if __name__ == '__main__':
+    
     main()
 
 

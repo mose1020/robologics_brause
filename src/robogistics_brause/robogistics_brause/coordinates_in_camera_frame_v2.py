@@ -5,12 +5,16 @@ import os
 import pyrealsense2 as rs
 import tkinter as tk
 
+from PIL import ImageTk
+
 from PIL import Image
 from scipy.interpolate import splprep, splev
 
 # new imports for transfer from docker to local
 import docker
 import shutil
+from ultralytics import YOLO
+import torch
 
 
 class ColorSelector:
@@ -18,25 +22,54 @@ class ColorSelector:
     def __init__(self):
         # Create the main window
         self.root = tk.Tk()
+        self.method = "Classic"
 
         # Set the window title and size
         self.root.title("Color Selector")
-        self.root.geometry("340x170")
+        self.root.geometry("500x680")
 
         # Center the window on the screen
         self.root.eval('tk::PlaceWindow %s center' % self.root.winfo_toplevel())
 
-        # Create four buttons with different background colors and styles
-        self.red_button = tk.Button(self.root, text="Red", bg="red", command=self.select_red, font=("Helvetica", 16), width=10, height=2)
-        self.orange_button = tk.Button(self.root, text="Orange", bg="orange", command=self.select_orange, font=("Helvetica", 16), width=10, height=2)
-        self.green_button = tk.Button(self.root, text="Green", bg="green", command=self.select_green, font=("Helvetica", 16), width=10, height=2)
-        self.yellow_button = tk.Button(self.root, text="Yellow", bg="yellow", command=self.select_yellow, font=("Helvetica", 16), width=10, height=2)
+        button_width = 100
+        button_height = 200
+        red_image = Image.open("src/robogistics_brause/robogistics_brause/object_detection/images/Himbeere.PNG")# Replace "red_image.png" with the path to your image
+        red_image = red_image.resize((button_width, button_height)) 
+        self.red_image = ImageTk.PhotoImage(red_image)
+
+        orange_image = Image.open("src/robogistics_brause/robogistics_brause/object_detection/images/Orange.PNG")# Replace "red_image.png" with the path to your image
+        orange_image = orange_image.resize((button_width, button_height)) 
+        self.orange_image = ImageTk.PhotoImage(orange_image)
+
+        green_image = Image.open("src/robogistics_brause/robogistics_brause/object_detection/images/Waldmeister.PNG")# Replace "red_image.png" with the path to your image
+        green_image = green_image.resize((button_width, button_height)) 
+        self.green_image = ImageTk.PhotoImage(green_image)
+
+        yellow_image = Image.open("src/robogistics_brause/robogistics_brause/object_detection/images/Zitrone.PNG")# Replace "red_image.png" with the path to your image
+        yellow_image = yellow_image.resize((button_width, button_height)) 
+        self.yellow_image = ImageTk.PhotoImage(yellow_image)
+
+        # Create four buttons with different background colors and tyles
+        self.red_button = tk.Button(self.root, image=self.red_image,command=self.select_red, width=button_width, height=button_height)
+        self.orange_button = tk.Button(self.root, image=self.orange_image,command=self.select_orange, width=button_width, height=button_height)
+        self.green_button = tk.Button(self.root, image=self.green_image,command=self.select_green, width=button_width, height=button_height)
+        self.yellow_button = tk.Button(self.root, image=self.yellow_image,command=self.select_yellow, width=button_width, height=button_height)
+
+        # Create the checkboxes
+        self.checkboxClassic_var = tk.BooleanVar(value=True)
+        self.checkboxYOLO_var = tk.BooleanVar(value=False)
+        self.checkboxClassic = tk.Checkbutton(self.root, text="Klassisch", variable=self.checkboxClassic_var, command=self.check_classic)
+        self.checkboxYOLO = tk.Checkbutton(self.root, text="YOLOV8", variable=self.checkboxYOLO_var, command=self.check_yolo)
 
         # Pack the buttons into the window using the grid layout manager
         self.red_button.grid(row=0, column=0, padx=10, pady=10)
         self.orange_button.grid(row=0, column=1, padx=10, pady=10)
         self.green_button.grid(row=1, column=0, padx=10, pady=10)
         self.yellow_button.grid(row=1, column=1, padx=10, pady=10)
+
+        # Pack the Checkboxes into the window using the grid layout manager
+        self.checkboxClassic.grid(row=2, column=0, padx=10, pady=10)
+        self.checkboxYOLO.grid(row=2, column=1, padx=10, pady=10)
 
     # Method to select the "red" color
     def select_red(self):
@@ -58,20 +91,36 @@ class ColorSelector:
         self.root.destroy()
         self.color = "yellow"
 
-    # Method to show the color selector window and return the selected color
-    def get_color(self):
+    def check_classic(self):
+        if self.checkboxClassic_var.get():
+            self.checkboxYOLO_var.set(False)
+            self.method = "Classic"
+
+    # Method to handle Checkbox 2 selection
+    def check_yolo(self):
+        if self.checkboxYOLO_var.get():
+            self.checkboxClassic_var.set(False)
+            self.method = "YOLO"
+
+    # Method to show the color selector window self.root.state('zoomed')and return the selected color
+    def get_color_and_method(self):
         self.color = None
         self.root.mainloop()
-        return self.color
-
+        return self.color, self.method
 
 class ColorImage:
 
-    def __init__(self, color):
-        self.brightness_value = 60
-        self.saturation_value = 70
+    def __init__(self, color, method):
+        self.brightness_value_Classic = 60
+        self.saturation_value_Classic = 70
+        self.brightness_value_YOLO = 50
+        self.saturation_value_YOLO = 50
         self.color = color
         self.folder_path = "images_realsense/" 
+        self.YOLO_IMG_PATH = "src/robogistics_brause/robogistics_brause/YOLO_image.jpg" # safe the image for YOLO here
+        self.method = method # method "YOLO"
+        self.model = YOLO(model='src/robogistics_brause/robogistics_brause/object_detection/Yolov8_model/weights/best.pt')
+
 
     def getTreshold(self):
 
@@ -106,24 +155,38 @@ class ColorImage:
 
         # Set the brightness and saturation of the camera
         color_sensor = pipeline.get_active_profile().get_device().first_color_sensor()
-        color_sensor.set_option(rs.option.brightness, self.brightness_value)
-        color_sensor.set_option(rs.option.saturation, self.saturation_value)
+
+        if self.method == "Classic":
+            color_sensor.set_option(rs.option.brightness, self.brightness_value_Classic)
+            color_sensor.set_option(rs.option.saturation, self.saturation_value_Classic)
+
+        else:
+            color_sensor.set_option(rs.option.brightness, self.brightness_value_YOLO)
+            color_sensor.set_option(rs.option.saturation, self.saturation_value_YOLO)
 
         # Wait for a coherent pair of frames: depth and color
         frames = pipeline.wait_for_frames()
         color_frame = frames.get_color_frame()
-
-        # Convert images to numpy arrays
-        color_image = np.asanyarray(color_frame.get_data())
-
         # Stop streaming
         pipeline.stop()
+        # Convert images to numpy arrays
+        color_array = np.asanyarray(color_frame.get_data())
+        bgr_array = cv2.cvtColor(color_array, cv2.COLOR_RGB2BGR)
+        color_img = Image.fromarray(bgr_array)
+        color_img.save(self.YOLO_IMG_PATH)
 
-        return color_image
+        # if self.method == "YOLO":
+        #     return self.YOLO_IMG_PATH
+        # else:
+        #     return color_array
 
-    def getClassicalMask(self, color_image, lower_value, upper_value):
+        return color_array
 
-        hsv = cv2.cvtColor(color_image, cv2.COLOR_BGR2HSV)    # convert to HSV
+    def getClassicalMask(self, color_array):
+
+        lower_value, upper_value = self.getTreshold()
+
+        hsv = cv2.cvtColor(color_array, cv2.COLOR_BGR2HSV)    # convert to HSV
         mask = cv2.inRange(hsv, lower_value, upper_value)  # mask for color
 
         kernel = np.ones((15,15),np.uint8)  # 15x15 kernel for morphological transformation
@@ -134,9 +197,57 @@ class ColorImage:
 
         return classical_mask
     
-    def getPixelCoordinates(self, mask, color_image):
+    def getYOLOMask(self):
+        results = self.model.predict(source=self.YOLO_IMG_PATH, save=False, save_txt=False, stream=True)
+        color_index = 0
+        if self.color == "red":
+            color_index = 2
+
+        if self.color == "green":
+            color_index = 0
+
+        if self.color == "yellow":
+            color_index = 3
+
+        if self.color == "orange":
+            color_index = 1
+        for result in results: # only on result in results
+            
+            # get array results
+            all_masks = result.masks.data
+            boxes = result.boxes.data
+            color = boxes[:, 5] #
+            idx_masks_color = torch.where(color == color_index) # index of the chosen coulour
+            # use these indices to extract the relevant masks
+            for index in idx_masks_color:
+                color_masks = all_masks[index]
+                result_masks = [[],[]]
+                for i in range(len(color_masks)):
+
+                    result_mask = color_masks[i].cpu().numpy()
+                    result_masks[0].append(np.count_nonzero(result_mask))
+                    result_masks[1].append(result_mask)
+
+        _, final_mask_list = (list(t) for t in zip(*sorted(zip(result_masks[0], result_masks[1]), reverse=True)))
+
+
+        binary_array = np.where(final_mask_list[0] != 0, 1, 0)
+        binary_array = binary_array.astype('uint8')
+        resized_binary_array = cv2.resize(binary_array,(1280, 720))
+        resized_binary_array.astype('uint8') # nicht sicher ob notwendig
+
+        return resized_binary_array
+    
+    def getPixelCoordinates(self, color_image):
+
+        if self.method == "YOLO":
+            mask = self.getYOLOMask()
+        else:
+            mask = self.getClassicalMask(color_image)
         
-        contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE) # find contours
+        print(type(color_image))
+        
+        contours,_ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE) # find contours
         biggest_contour = max(contours, key = cv2.contourArea) # find the biggest contour (c) by the area
 
         # find the center of the contour
@@ -255,20 +366,17 @@ class DepthImage:
 
         return x_cameraFrame, y_cameraFrame, z_cameraFrame
 
-
 def getPose():
     color_selector = ColorSelector()
-    selected_color = color_selector.get_color()
+    selected_color, method = color_selector.get_color_and_method()
 
-    image = ColorImage(selected_color)
-    lower_value, upper_value = image.getTreshold()
+    image = ColorImage(selected_color, method)
     color_image = image.startStream()
-    classical_mask = image.getClassicalMask(color_image, lower_value, upper_value)
 
-    x_pixelkoordinate, y_pixelkoordinate = image.getPixelCoordinates(classical_mask, color_image)
+    x_pixelkoordinate, y_pixelkoordinate = image.getPixelCoordinates(color_image)
 
     depthImage = DepthImage(x_pixelkoordinate, y_pixelkoordinate)
     pipeline, profile = depthImage.startDepthStream()
     x_cameraFrame, y_cameraFrame, z_cameraFrame = depthImage.get3DCoordinates(pipeline, profile)
 
-    return -x_cameraFrame, y_cameraFrame, z_cameraFrame, selected_color
+    return -x_cameraFrame, y_cameraFrame, z_cameraFrame, selected_color, method
