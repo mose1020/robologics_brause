@@ -43,7 +43,7 @@ class BrausePicker:
         self.robot = RobotClient(is_simulation=is_simulation)
         self.robot.home_pose=home_pose
     
-    def get_pre_pose(self, pose: Affine, distance: float = 0.1) -> Affine:
+    def get_pre_pose(self, pose: Affine, distance: float = 0.15) -> Affine:
         """ Calculate the pre-pick and pre-place pose with the given distance 
         to the given pose.
 
@@ -63,7 +63,7 @@ class BrausePicker:
         #pre_pose_transform = Affine(translation=(0, 0, -distance))
         #pre_pose = pose * pre_pose_transform
         
-        # prepose is 10cm above the pick pose
+        # prepose is 15cm above the pick pose
         pre_pose = Affine((pose.translation[0], pose.translation[1], pose.translation[2] + distance), pose.quat)
 
         return pre_pose
@@ -80,13 +80,15 @@ class BrausePicker:
 
         """
         self.robot.home()
-        pre_pick = self.get_pre_pose(pick_pose, distance=0.1)
+        pre_pick = self.get_pre_pose(pick_pose, distance=0.15)
         self.robot.ptp(pre_pick)
         self.robot.close_vacuum_gripper()
         self.robot.lin(pick_pose)
         #maybe a wait is needed here if the brause is not attaching correctly
         self.robot.lin(pre_pick) 
         self.robot.home()
+
+    def validate_pick_pose()
 
     def move_to_camera(self) -> None:
         self.robot.home()
@@ -100,6 +102,8 @@ class BrausePicker:
         self.robot.ptp(Affine((0.051, 0.182, 1.319), (0.732, 0.451, 0.434, 0.268)))
         self.robot.home()
 
+    def shut_off_vacuum(self) -> None:
+        self.robot.open_vacuum_gripper()
 
     def drop_at_slide(self) -> None:
         #drop position
@@ -217,7 +221,8 @@ def main(args=None):
 
     pose_from_camera = Affine((transformed_position2[0],transformed_position2[1],transformed_position2[2]), (0.444, 0.445, 0.550, 0.550))
   
-    #start pick routine
+    #start pick routine and open vacuum gripper before
+    test_picks.shut_off_vacuum()
     test_picks.pick(pose_from_camera)
 
     #move to camera for evaluation
@@ -230,7 +235,7 @@ def main(args=None):
     successfulPick = color_image.picSuccessful()
 
     #for debugging##################
-    successfulPick = False
+    successfulPick = True
     ################################
 
     test_picks.leave_camera()
