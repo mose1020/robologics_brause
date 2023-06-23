@@ -259,13 +259,16 @@ def main(args=None):
         #move to camera for evaluation
         test_picks.move_to_camera()
         
-        #take picture and evaluate
-        color_image = ColorImage(selectedColor,method)
-        successfulPick = color_image.picSuccessful()
 
-        #for debugging##################
-        successfulPick = True
-        ################################
+          # ###### bildmethode check###########
+
+    color_image = ColorImage(selectedColor, "YOLO")
+    successfulPick = color_image.picSuccessful()
+
+    #for debugging##################
+    #successfulPick = False
+    ################################
+
 
         #move to home away from camera
         test_picks.leave_camera()
