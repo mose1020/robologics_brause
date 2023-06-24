@@ -178,6 +178,13 @@ Coordinates:
 0.125 0.324 1.023
 
 
+
+---------------start rviz---------------------------
+ros2 launch kuka_kr3_cell_description cell.launch.py use_fake_hardware:=false robot_ip:=10.181.116.71
+---------------start brause programm----------------
+ros2 run brause test_ros_env
+
+
 R5 above position
 0.024, 0.319, 1.121), (0.444, 0.445, 0.550, 0.550)
 R5 pick position 

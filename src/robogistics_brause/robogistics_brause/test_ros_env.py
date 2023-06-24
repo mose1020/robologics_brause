@@ -274,6 +274,7 @@ def main(args=None):
     #convert translation and rotation to pose
     pose_from_camera = Affine((transformed_position2[0],transformed_position2[1],transformed_position2[2]), (0.444, 0.445, 0.550, 0.550))
     pose_is_valid = test_picks.validate_pick_pose(pose_from_camera)
+    is_coordinate_inside_polygon(pose_from_camera.translation[0], pose_from_camera.translation[1])
 
     #------------------------------------------start of movement-------------------------------------------------------
     if pose_is_valid:
