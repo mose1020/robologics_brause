@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 
 def is_coordinate_inside_polygon(x, y):
+    """Check if a coordinate (x, y) is inside a polygon.
+    """
     polygon = [(0.068, 0.341), (-0.324, 0.341), (-0.281, 0.172), (0.114, 0.124)]
     n = len(polygon)
     inside = False
@@ -35,12 +37,20 @@ xs, ys = zip(*polygon)
 fig, ax = plt.subplots()
 ax.plot(xs, ys, 'r-')
 ax.add_patch(Polygon(polygon, closed=True, alpha=0.2))
+ax.annotate('Valid pick area', xy=(-0.1, 0.3), xytext=(0.05, 0.4),
+            arrowprops=dict(facecolor='black', arrowstyle='->'))
 
-#place a huge circle at 0.0, 0.4 and name it Robot
-ax.add_patch(plt.Circle((0.0, 0.4), 0.05, color='grey', alpha=0.2))
-ax.annotate('Robot', xy=(0.0, 0.4), xytext=(0.0+0.05, 0.4+0.05),
-                arrowprops=dict(facecolor='black', arrowstyle='->'))
+#place a huge circle at -0.2, 0.1 and name it Robot
+ax.add_patch(plt.Circle((-0.2, 0.1), 0.05, color='grey', alpha=0.2))
+ax.annotate('Robot', xy=(-0.2, 0.1), xytext=(-0.2, 0.1))
 
+#add a grey robot arm rectangle
+ax.add_patch(plt.Rectangle((-0.2, 0.075), 0.2, 0.05, color='grey', alpha=0.2))
+
+
+#add lines along x values -0.2 and -0.05
+ax.plot([-0.2, -0.2], [-0.2, 0.4], 'k-')
+ax.plot([-0.05, -0.05], [-0.2, 0.4], 'k-')
 
 
 if result:
@@ -57,6 +67,6 @@ ax.set_ylim(min(ys) - 0.1, max(ys) + 0.1)
 ax.set_aspect('equal')
 plt.xlabel('X')
 plt.ylabel('Y')
-plt.title('Point Inside Polygon')
+plt.title('Pick Point Map')
 #plt.show()
-plt.savefig('validate_position.jpg')
+plt.savefig('src/robogistics_brause/robogistics_brause/validate_position.jpg')
