@@ -164,7 +164,7 @@ Alternatively: In VSCode click "reopen in conainer"
       - before running the application, check the robot's movement in the simulated environment and make sure, that the
         robot is not in a collision state when the application is executed on the real robot 
       ```
-      ros2 run r2e_demos test_ros_env
+      ros2 run brause test_ros_env
       ```
 
 ## Make your own ROS2 application
