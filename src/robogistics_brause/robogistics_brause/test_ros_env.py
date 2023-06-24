@@ -16,7 +16,7 @@ import tf2_geometry_msgs
 import geometry_msgs.msg
 from geometry_msgs.msg import Point
 import numpy as np
-from plot import is_coordinate_inside_polygon
+from plot import validate_point_and_save_image
 
 
 
@@ -88,36 +88,6 @@ class BrausePicker:
         #maybe a wait is needed here if the brause is not attaching correctly
         self.robot.lin(pre_pick) 
         self.robot.home()
-    
-    def validate_pick_pose(self, pick_pose: Affine) -> bool:
-        """This function checks if the pick pose is inside the polygon of the slide
-
-        Args:
-            pick_pose (_type_): x and y coordinates of the pick pose
-            pick_pose (_type_): 
-
-        Returns:
-            bool: True if the pick pose is inside the polygon, False if not
-        """    
-        #Values by experimental testing    
-        polygon = [(0.068, 0.341), (-0.324, 0.341), (-0.281, 0.172), (0.114, 0.124)]
-        n = len(polygon)
-        inside = False
-        x = pick_pose.translation[0]
-        y = pick_pose.translation[1]
-        p1x, p1y = polygon[0]
-        for i in range(n + 1):
-            p2x, p2y = polygon[i % n]
-            if y > min(p1y, p2y):
-                if y <= max(p1y, p2y):
-                    if x <= max(p1x, p2x):
-                        if p1y != p2y:
-                            xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
-                        if p1x == p2x or x <= xinters:
-                            inside = not inside
-            p1x, p1y = p2x, p2y
-
-        return inside
     
     def move_to_camera(self) -> None:
         self.robot.home()
@@ -273,9 +243,9 @@ def main(args=None):
     
     #convert translation and rotation to pose
     pose_from_camera = Affine((transformed_position2[0],transformed_position2[1],transformed_position2[2]), (0.444, 0.445, 0.550, 0.550))
-    pose_is_valid = test_picks.validate_pick_pose(pose_from_camera)
-    is_coordinate_inside_polygon(pose_from_camera.translation[0], pose_from_camera.translation[1])
+    pose_is_valid = validate_point_and_save_image(pose_from_camera.translation[0], pose_from_camera.translation[1])
 
+    
     #------------------------------------------start of movement-------------------------------------------------------
     if pose_is_valid:
         #adjust the orientation of the gripper

@@ -181,6 +181,8 @@ Coordinates:
 
 ---------------start rviz---------------------------
 ros2 launch kuka_kr3_cell_description cell.launch.py use_fake_hardware:=false robot_ip:=10.181.116.71
+
+
 ---------------start brause programm----------------
 ros2 run brause test_ros_env
 
