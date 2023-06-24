@@ -103,7 +103,6 @@ class BrausePicker:
         polygon = [(0.068, 0.341), (-0.324, 0.341), (-0.281, 0.172), (0.114, 0.124)]
         n = len(polygon)
         inside = False
-        #get x and y coordinates of Affine pick_pose
         x = pick_pose.translation[0]
         y = pick_pose.translation[1]
         p1x, p1y = polygon[0]
