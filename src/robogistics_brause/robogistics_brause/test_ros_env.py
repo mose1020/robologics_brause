@@ -16,6 +16,8 @@ import tf2_geometry_msgs
 import geometry_msgs.msg
 from geometry_msgs.msg import Point
 import numpy as np
+from plot import is_coordinate_inside_polygon
+
 
 #from .coordinates_in_camera_frame_leon import getPose, ColorImage
 #from .coordinates_in_camera_frame import getPose
