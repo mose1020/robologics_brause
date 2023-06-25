@@ -164,7 +164,7 @@ Alternatively: In VSCode click "reopen in conainer"
       - before running the application, check the robot's movement in the simulated environment and make sure, that the
         robot is not in a collision state when the application is executed on the real robot 
       ```
-      ros2 run r2e_demos test_ros_env
+      ros2 run brause test_ros_env
       ```
 
 ## Make your own ROS2 application
@@ -176,6 +176,15 @@ but please do not push your changes to this repository.
 Base  coordinates R3 on metal grid set for easier orientation
 Coordinates:
 0.125 0.324 1.023
+
+
+
+---------------start rviz---------------------------
+ros2 launch kuka_kr3_cell_description cell.launch.py use_fake_hardware:=false robot_ip:=10.181.116.71
+
+
+---------------start brause programm----------------
+ros2 run brause test_ros_env
 
 
 R5 above position
