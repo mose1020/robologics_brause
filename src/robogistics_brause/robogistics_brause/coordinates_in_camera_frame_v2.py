@@ -135,6 +135,8 @@ class ColorImage:
         self.color = color
         self.folder_path = "images_realsense/" 
         self.YOLO_IMG_PATH = "src/robogistics_brause/robogistics_brause/YOLO_image.jpg" # safe the image for YOLO here
+        self.image_path = "src/robogistics_brause/robogistics_brause/images/"
+        self.new_folder_path = ""
         self.method = method # method "YOLO"
         self.model = YOLO(model='src/robogistics_brause/robogistics_brause/object_detection/Yolov8_model/weights/best.pt')
         self.mask_threshold = 6000  #if mask_threshold > 6000 pixel, pick was successful
@@ -196,6 +198,28 @@ class ColorImage:
         color_img = Image.fromarray(bgr_array)
         color_img.save(self.YOLO_IMG_PATH)
 
+
+        # Check for existing folders with a similar name
+        existing_folders = [name for name in os.listdir(self.image_path) if os.path.isdir(os.path.join(self.image_path, name))]
+        existing_numbers = [int(name.split("_")[1]) for name in existing_folders if name.startswith("images_")]
+
+        # Find the highest number used so far
+        if existing_numbers:
+            highest_number = max(existing_numbers)
+        else:
+            highest_number = -1
+
+        # Create a new folder with an incremented number
+        new_number = highest_number + 1
+        new_folder_name = f"images_{new_number}"
+        new_folder_path = os.path.join(self.image_path, new_folder_name)
+
+        # Create the new folder
+        os.makedirs(new_folder_path)
+        self.new_folder_path = new_folder_path
+        new_image_path = os.path.join(new_folder_path, "color_image.jpg")
+        color_img.save(new_image_path)
+
         return color_array
 
     def getClassicalMask(self, color_array):
@@ -211,10 +235,15 @@ class ColorImage:
         closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel)
         classical_mask = closing
 
+        image_path = os.path.join(self.new_folder_path, "classical_mask.jpg")
+        classical_mask_image = Image.fromarray(classical_mask)
+        classical_mask_image.save(image_path)
+
         return classical_mask
     
     def getYOLOMask(self):
         results = self.model.predict(source=self.YOLO_IMG_PATH, save=False, save_txt=False, stream=True)
+        print("RESULT", results)
         color_index = 0
         if self.color == "red":
             color_index = 2
@@ -227,31 +256,54 @@ class ColorImage:
 
         if self.color == "orange":
             color_index = 1
-        for result in results: # only on result in results
-            
-            # get array results
-            all_masks = result.masks.data
-            boxes = result.boxes.data
-            color = boxes[:, 5] #
-            idx_masks_color = torch.where(color == color_index) # index of the chosen coulour
-            # use these indices to extract the relevant masks
-            for index in idx_masks_color:
-                color_masks = all_masks[index]
-                result_masks = [[],[]]
-                for i in range(len(color_masks)):
 
-                    result_mask = color_masks[i].cpu().numpy()
-                    result_masks[0].append(np.count_nonzero(result_mask))
-                    result_masks[1].append(result_mask)
+        try:
+            for result in results: # only on result in results
+                
+                # get array results
+                all_masks = result.masks.data
+                boxes = result.boxes.data
+                color = boxes[:, 5] #
+                idx_masks_color = torch.where(color == color_index) # index of the chosen coulour
+                # use these indices to extract the relevant masks
+                for index in idx_masks_color:
+                    color_masks = all_masks[index]
+                    result_masks = [[],[]]
+                    for i in range(len(color_masks)):
 
-        _, final_mask_list = (list(t) for t in zip(*sorted(zip(result_masks[0], result_masks[1]), reverse=True)))
+                        result_mask = color_masks[i].cpu().numpy()
+                        result_masks[0].append(np.count_nonzero(result_mask))
+                        result_masks[1].append(result_mask)
 
-        mask_size = np.count_nonzero(final_mask_list[0])
+                _, final_mask_list = (list(t) for t in zip(*sorted(zip(result_masks[0], result_masks[1]), reverse=True)))
 
-        binary_array = np.where(final_mask_list[0] != 0, 1, 0)
-        binary_array = binary_array.astype('uint8')
-        resized_binary_array = cv2.resize(binary_array,(1280, 720))
-        resized_binary_array.astype('uint8') # nicht sicher ob notwendig
+
+                accumulated_array = np.zeros_like(final_mask_list[0])
+                for mask in final_mask_list:
+                    accumulated_array = np.logical_or(accumulated_array, mask)
+
+                accumulated_array = accumulated_array.astype('uint8')
+                resized_accumulated_array = cv2.resize(accumulated_array, (1280, 720))
+                resized_accumulated_array = resized_accumulated_array.astype('uint8')
+                image_path = os.path.join(self.new_folder_path, "yolo_mask.jpg")
+                grayscale_image = Image.fromarray((resized_accumulated_array * 255).astype(np.uint8), mode='L')
+                grayscale_image.save(image_path)
+
+                mask_size = np.count_nonzero(final_mask_list[0])
+
+                binary_array = np.where(final_mask_list[0] != 0, 1, 0)
+
+                binary_array = binary_array.astype('uint8')
+                resized_binary_array = cv2.resize(binary_array,(1280, 720))
+                resized_binary_array.astype('uint8') # nicht sicher ob notwendig
+
+                # image_path = os.path.join(self.new_folder_path, "yolo_mask.jpg")
+                # grayscale_image = Image.fromarray((resized_binary_array * 255).astype(np.uint8), mode='L')
+                # grayscale_image.save(image_path)
+
+        except:
+            mask_size = 0
+            resized_binary_array = 0
 
         return resized_binary_array, mask_size
     
@@ -259,8 +311,10 @@ class ColorImage:
 
         if self.method == "YOLO":
             mask, _ = self.getYOLOMask()
+            filename = "yolo_pixel_coordinates.jpg"
         else:
             mask = self.getClassicalMask(color_image)
+            filename = "classical_pixel_coordinates.jpg"
 
         mask_size = np.count_nonzero(mask)
 
@@ -282,16 +336,6 @@ class ColorImage:
         u_new = np.linspace(u.min(), u.max(), 1000) 
         x_new, y_new = splev(u_new, tck, der=0)
 
-        # Create the "images" folder if it doesn't exist
-        os.makedirs(self.folder_path, exist_ok=True)
-
-        # Determine the next image number
-        existing_images = os.listdir(self.folder_path)
-        current_image_number = len(existing_images) + 1
-
-        # Define the filename with the current image number
-        filename = f"image_{current_image_number}.jpg"
-
         # Show the original image with the contour
         image = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
         plt.figure(figsize=(8, 8))
@@ -300,7 +344,7 @@ class ColorImage:
         plt.plot(x_pixelkoordinate, y_pixelkoordinate, 'bo') 
 
         # Save the plot image in the "images_realsense/" folder with the filename
-        plt.savefig(os.path.join(self.folder_path, filename))
+        plt.savefig(os.path.join(self.new_folder_path, filename))
 
         return x_pixelkoordinate, y_pixelkoordinate
     
@@ -320,22 +364,10 @@ class ColorImage:
 
         color_image = self.startStream()
 
-        os.makedirs(self.folder_path, exist_ok=True)
-
-        # Determine the next image number
-        existing_images = os.listdir(self.folder_path)
-        current_image_number = len(existing_images) + 1
-
-        # Define the filename with the current image number
-        filename = f"picSuccessful_{current_image_number}.jpg"
-
-        # Show the original image with the contour
-        image = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
-        plt.figure(figsize=(8, 8))
-        plt.imshow(image)
-
-        # Save the plot image in the "images_realsense/" folder with the filename
-        plt.savefig(os.path.join(self.folder_path, filename))
+        bgr_array = cv2.cvtColor(color_image, cv2.COLOR_RGB2BGR)
+        image_path = os.path.join(self.new_folder_path, "check_successful.jpg")
+        color_img = Image.fromarray(bgr_array)
+        color_img.save(image_path)
 
         _, mask_size = self.getYOLOMask()
 
@@ -415,7 +447,5 @@ def getPose(color_available):
     depthImage = DepthImage(x_pixelkoordinate, y_pixelkoordinate)
     pipeline, profile, align = depthImage.startDepthStream()
     x_cameraFrame, y_cameraFrame, z_cameraFrame = depthImage.get3DCoordinates(pipeline, profile, align)
-
+    print("POSE", x_cameraFrame, y_cameraFrame, z_cameraFrame)
     return -x_cameraFrame, y_cameraFrame, z_cameraFrame, selected_color, method
-
-getPose("red")

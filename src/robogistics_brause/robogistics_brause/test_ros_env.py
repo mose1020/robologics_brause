@@ -16,13 +16,9 @@ import tf2_geometry_msgs
 import geometry_msgs.msg
 from geometry_msgs.msg import Point
 import numpy as np
-from plot import validate_point_and_save_image
-
-
+from .plot import validate_point_and_save_image
 
 from .coordinates_in_camera_frame_v2 import getPose,ColorImage
-
-
 
 class BrausePicker:
     def __init__(
@@ -246,7 +242,7 @@ def main(args=None):
     pose_is_valid = validate_point_and_save_image(pose_from_camera.translation[0], pose_from_camera.translation[1])
 
     
-    #------------------------------------------start of movement-------------------------------------------------------
+    # #------------------------------------------start of movement-------------------------------------------------------
     if pose_is_valid:
         #adjust the orientation of the gripper
         pose_from_camera = test_picks.adjust_orientation(pose_from_camera)
