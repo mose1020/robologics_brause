@@ -417,3 +417,5 @@ def getPose(color_available):
     x_cameraFrame, y_cameraFrame, z_cameraFrame = depthImage.get3DCoordinates(pipeline, profile, align)
 
     return -x_cameraFrame, y_cameraFrame, z_cameraFrame, selected_color, method
+
+getPose("red")
