@@ -87,21 +87,25 @@ class ColorSelector:
     # Method to select the "red" color
     def select_red(self):
         self.root.destroy()
+        print("red")
         self.color = "red"
 
     # Method to select the "orange" color
     def select_orange(self):
         self.root.destroy()
+        print("orange")
         self.color = "orange"
 
     # Method to select the "green" color
     def select_green(self):
         self.root.destroy()
+        print("green")
         self.color = "green"
 
     # Method to select the "yellow" color
     def select_yellow(self):
         self.root.destroy()
+        print("yellow")
         self.color = "yellow"
 
     def check_classic(self):
@@ -119,6 +123,7 @@ class ColorSelector:
     def get_color_and_method(self):
         self.color = None
         self.root.mainloop()
+        print(self.color, self.method)
         return self.color, self.method
     
     # Method to show the text
@@ -434,8 +439,10 @@ class DepthImage:
         return x_cameraFrame, y_cameraFrame, z_cameraFrame
 
 def getPose(color_available):
-    color_selector = ColorSelector(color_available)
-    selected_color, method = color_selector.get_color_and_method()
+    selected_color = input("Enter a color (red, yellow, orange, green): ")
+    method = input("Enter a method (Classic or YOLO): ")
+    #color_selector = ColorSelector(color_available)
+    #selected_color, method = color_selector.get_color_and_method()
 
     image = ColorImage(selected_color, method)
     color_image = image.startStream()
