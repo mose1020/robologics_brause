@@ -7,14 +7,14 @@ def main(args=None):
     # initialize ros communications for a given context
     rclpy.init(args=args)
 
-    robot = RobotClient(is_simulation=False)
+    robot = RobotClient(is_simulation=True)
     time.sleep(5)
     print("StartTime:",time.asctime( time.localtime(time.time()) ))
     robot.close_vacuum_gripper()
     # robot ptp movement again
     print("AfterCloseTime:",time.asctime( time.localtime(time.time()) ))
     
-
+    robot.home()
     #robot.close_vacuum_gripper()
     # back to home pose
     time.sleep(5)

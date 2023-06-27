@@ -40,21 +40,22 @@ class ColorSelector:
         button_width = 250
         button_height = 320
 
+
         red_image = Image.open("src/robogistics_brause/robogistics_brause/object_detection/images/Himbeere.PNG")# Replace "red_image.png" with the path to your image
         red_image = red_image.resize((button_width, button_height)) 
-        self.red_image = ImageTk.PhotoImage(red_image)
+        self.red_image = ImageTk.PhotoImage(red_image, master=self.root)
 
         orange_image = Image.open("src/robogistics_brause/robogistics_brause/object_detection/images/Orange.PNG")# Replace "red_image.png" with the path to your image
         orange_image = orange_image.resize((button_width, button_height)) 
-        self.orange_image = ImageTk.PhotoImage(orange_image)
+        self.orange_image = ImageTk.PhotoImage(orange_image, master=self.root)
 
         green_image = Image.open("src/robogistics_brause/robogistics_brause/object_detection/images/Waldmeister.PNG")# Replace "red_image.png" with the path to your image
         green_image = green_image.resize((button_width, button_height)) 
-        self.green_image = ImageTk.PhotoImage(green_image)
+        self.green_image = ImageTk.PhotoImage(green_image, master=self.root)
 
         yellow_image = Image.open("src/robogistics_brause/robogistics_brause/object_detection/images/Zitrone.PNG")# Replace "red_image.png" with the path to your image
         yellow_image = yellow_image.resize((button_width, button_height)) 
-        self.yellow_image = ImageTk.PhotoImage(yellow_image)
+        self.yellow_image = ImageTk.PhotoImage(yellow_image, master=self.root)
 
         # Create four buttons with different background colors and tyles
         self.red_button = tk.Button(self.root, image=self.red_image,command=self.select_red, width=button_width, height=button_height)
