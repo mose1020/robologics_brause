@@ -7,9 +7,9 @@ namespace zimmer_gp406n
 {
     Gripper::Gripper() : Node("zimmer_gp406n_node")
     {
-        this->declare_parameter("robot_ip");
-        this->declare_parameter("eki_io_port");
-        this->declare_parameter("n_io");
+        this->declare_parameter("robot_ip", "0.0.0.0");
+        this->declare_parameter("eki_io_port", 5002);
+        this->declare_parameter("n_io", 2);
 
         std::string robot_ip;
         this->get_parameter("robot_ip", robot_ip);

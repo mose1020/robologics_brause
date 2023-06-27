@@ -1,5 +1,5 @@
 #!/bin/sh
-ROS_DISTRO=foxy
+ROS_DISTRO=humble
 DOMAIN_ID=40
 uid=$(eval "id -u")
 gid=$(eval "id -g")

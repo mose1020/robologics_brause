@@ -2,7 +2,7 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.task import Future
-from iras_srvs.srv import Pose as PoseSrv
+from iras_interfaces.srv import MoveToPose as PoseSrv
 from geometry_msgs.msg import Pose as PoseMsg
 from geometry_msgs.msg import Quaternion, Point
 from std_srvs.srv import Trigger
@@ -48,10 +48,10 @@ class RobotClient:
         self.home_pose = Affine((-0.002, -0.052, 1.278), (0, 0.86, 0, 0.511))
 
         self.start_servo_client = self.node.create_client(
-            Trigger, "servo_service/start_servo")
+            Trigger, "servo_node/start_servo")
 
         self.stop_servo_client = self.node.create_client(
-            Trigger, "servo_service/stop_servo")
+            Trigger, "servo_node/stop_servo")
 
         while not self.start_servo_client.wait_for_service(timeout_sec=1.0):
             self.node.get_logger().info('start_servo_client not available, waiting again...')

@@ -69,7 +69,7 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir pyrealsense2 && \
     pip install --no-cache-dir tk && \
     pip install --no-cache-dir Pillow && \
-    pip install torch==1.9.1+cpu torchvision==0.10.1+cpu -f https://download.pytorch.org/whl/torch_stable.html && \
+    pip install torch torchvision -f https://download.pytorch.org/whl/torch_stable.html && \
     pip install --no-cache-dir ultralytics && \
     pip install docker
 
@@ -103,13 +103,18 @@ RUN mkdir -p /home/"${USER}"/dependencies_ws/src
 
 RUN cd /home/"${USER}"/dependencies_ws/src && git clone https://project_377_bot:glpat-DxteEaE_sAxRBiYGXhya@www.w.hs-karlsruhe.de/gitlab/iras/common/ros_general/moveit_wrapper.git
 RUN cd /home/"${USER}"/dependencies_ws/src && git clone https://project_376_bot:glpat-4-ky62LJgxLzKMzJDzjU@www.w.hs-karlsruhe.de/gitlab/iras/common/ros_general/iras_interfaces.git
-RUN cd /home/"${USER}"/dependencies_ws/src && git clone https://project_436_bot:glpat-Px2zh52V7EPq1HzU9igi@www.w.hs-karlsruhe.de/gitlab/iras/research-projects/ki5grob/ros_environment.git
+RUN cd /home/"${USER}"/dependencies_ws/src && git clone -b humble https://project_436_bot:glpat-Px2zh52V7EPq1HzU9igi@www.w.hs-karlsruhe.de/gitlab/iras/research-projects/ki5grob/ros_environment.git
 
-RUN cd /home/"${USER}"/dependencies_ws/src && git clone -b driver https://project_223_bot:glpat-4BUf7DzgVe1EM6D46QBy@www.w.hs-karlsruhe.de/gitlab/iras/research-projects/ki5grob/kuka-eki.git
+RUN cd /home/"${USER}"/dependencies_ws/src && git clone -b driver-humble https://project_223_bot:glpat-4BUf7DzgVe1EM6D46QBy@www.w.hs-karlsruhe.de/gitlab/iras/research-projects/ki5grob/kuka-eki.git
 RUN cd /home/"${USER}"/dependencies_ws/src && git clone https://project_437_bot:glpat-T9c6K71xc_2WKJVB7tmA@www.w.hs-karlsruhe.de/gitlab/iras/research-projects/ki5grob/ready2_educate.git
 
 RUN . /opt/ros/"${ROS_DISTRO}"/setup.sh && cd /home/"${USER}"/dependencies_ws && colcon build
 RUN echo "source /home/$USER/dependencies_ws/install/setup.bash" >> /home/"${USER}"/.bashrc
+
+RUN mkdir -p /home/"$USER"/dependencies
+RUN cd /home/"$USER"/dependencies && git clone -b package https://robot-docker:glpat-wGUR5GzG1EYrNj_zdf_b@www.w.hs-karlsruhe.de/gitlab/iras/research-projects/ki5grob/manipulation_tasks.git
+RUN cd /home/"$USER"/dependencies/manipulation_tasks && pip install .
+
 
 ##############################################################################
 ##                                 Build ROS and run                        ##

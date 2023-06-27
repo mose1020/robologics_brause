@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from ros_environment.scene import RobotClient
-from ros_environment.transform import Affine
+from manipulation_tasks.transform import Affine
 import time
 from std_msgs.msg import Float32MultiArray
 from visualization_msgs.msg import Marker
@@ -211,7 +211,7 @@ def main(args=None):
     rclpy.init(args=args)
     marker_camara_pose = MarkerPublisherCam()
     marker_transformed_pose = MarkerPublisher()
-    test_picks = BrausePicker(is_simulation=False)
+    test_picks = BrausePicker(is_simulation=True)
     
     # values for current transformation from camera to cell link frame
     tf_fix = [0.068,-0.260,-1.661] # [0.115,-0.260,1.661] ,0.146

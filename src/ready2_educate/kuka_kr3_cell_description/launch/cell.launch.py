@@ -142,8 +142,8 @@ def generate_launch_description():
     servo_params = {"moveit_servo": servo_yaml}
 
     servo_node = Node(
-        package="moveit_wrapper",
-        executable="servo_server",
+        package="moveit_servo",
+        executable="servo_node_main",
         parameters=[
             servo_params,
             robot_description,
